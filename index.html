@@ -799,6 +799,63 @@
 </div><!-- /main -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDRerMVYhnbqO-aQID52IDKi7JsrgqJKgg",
+    authDomain: "anywhere-estimate.firebaseapp.com",
+    projectId: "anywhere-estimate",
+    storageBucket: "anywhere-estimate.firebasestorage.app",
+    messagingSenderId: "137359075892",
+    appId: "1:137359075892:web:b0ca5c4b1a95bc804eb861"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Firestore 저장
+  window.saveToFirestore = async function(data) {
+    try {
+      await setDoc(doc(db, 'estimates', String(data.id)), data);
+      return true;
+    } catch(e) {
+      console.error('Firestore 저장 오류:', e);
+      return false;
+    }
+  };
+
+  // Firestore 불러오기
+  window.loadFromFirestore = async function() {
+    try {
+      const q = query(collection(db, 'estimates'));
+      const snapshot = await getDocs(q);
+      const list = [];
+      snapshot.forEach(doc => list.push(doc.data()));
+      // savedAt 기준 최신순 정렬
+      list.sort((a,b) => (b.id||0) - (a.id||0));
+      return list;
+    } catch(e) {
+      console.error('Firestore 불러오기 오류:', e);
+      return null;
+    }
+  };
+
+  // Firestore 삭제
+  window.deleteFromFirestore = async function(id) {
+    try {
+      await deleteDoc(doc(db, 'estimates', String(id)));
+      return true;
+    } catch(e) {
+      console.error('Firestore 삭제 오류:', e);
+      return false;
+    }
+  };
+
+  window.firestoreReady = true;
+  console.log('Firebase 연결 완료!');
+</script>
 <script>
 // ══════════════════════════════════════════
 // STATE
@@ -1696,6 +1753,8 @@ function saveEstimate(silent=false) {
   else list.unshift(data);
   saveEstimates(list);
   currentEstimateId = data.id;
+  // Firestore에도 저장
+  if (window.saveToFirestore) window.saveToFirestore(data);
 
   // 저장 완료 피드백
   const btn = document.querySelector('[onclick="saveEstimate()"]');
@@ -1752,12 +1811,30 @@ function deleteEstimate(id) {
   if (!confirm('이 견적서를 삭제할까요?')) return;
   const list = getEstimates().filter(e => e.id !== id);
   saveEstimates(list);
+  if (window.deleteFromFirestore) window.deleteFromFirestore(id);
   renderEstimateList();
 }
 
-function renderEstimateList() {
-  const list = getEstimates();
+async function renderEstimateList() {
   const el = document.getElementById('estimate-list');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:13px;">불러오는 중...</div>';
+
+  // Firestore 준비될 때까지 최대 5초 대기
+  let waited = 0;
+  while (!window.loadFromFirestore && waited < 5000) {
+    await new Promise(r => setTimeout(r, 200));
+    waited += 200;
+  }
+
+  // Firestore에서 최신 데이터 동기화
+  if (window.loadFromFirestore) {
+    const cloudList = await window.loadFromFirestore();
+    if (cloudList && cloudList.length > 0) {
+      saveEstimates(cloudList);
+    }
+  }
+
+  const list = getEstimates();
   if (!list.length) {
     el.innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:13px;">저장된 견적서가 없어요.<br>새 견적서를 작성해보세요!</div>';
     return;
