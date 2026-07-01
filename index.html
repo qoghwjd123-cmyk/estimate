@@ -1047,7 +1047,6 @@ function buildCostHTML() {
 }
 
 function showExportModal() {
-  // 특기사항 있으면 자동 체크
   const hasNotes = notes.some(n => n.trim());
   const notesCheck = document.getElementById('exp-check-notes');
   if (notesCheck) notesCheck.checked = hasNotes;
@@ -1061,6 +1060,11 @@ function closeExportModal() {
 }
 
 function exportClientHTML() {
+  // 모달 닫기 전에 체크박스 값 읽기
+  inclCover    = document.getElementById('exp-check-cover')?.checked !== false;
+  inclEstimate = document.getElementById('exp-check-estimate')?.checked !== false;
+  inclCost     = document.getElementById('exp-check-cost')?.checked || false;
+  inclNotes    = document.getElementById('exp-check-notes')?.checked || false;
   closeExportModal();
   const proj    = document.getElementById('ci-project')?.textContent?.trim() || '견적서';
   const client  = getCoverVal('c-client') || '';
@@ -2007,6 +2011,7 @@ function esc(s) {
 // ══ LocalStorage 견적 관리 ══
 const STORAGE_KEY = 'ainEstimates';
 let currentEstimateId = null;
+let inclCover = true, inclEstimate = true, inclCost = false, inclNotes = false;
 
 function getEstimates() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
