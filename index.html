@@ -175,7 +175,7 @@
     font-size: 14px;
     font-weight: 700;
     font-family: 'Noto Serif KR', serif;
-    width: 200px;
+    width: 500px;
     padding: 2px 4px;
   }
   .section-header input:focus { outline: none; border-bottom-color: var(--accent); }
@@ -639,6 +639,32 @@
 
 <!-- ══ 작성 화면 ══ -->
 <div id="edit-screen">
+
+<!-- 내보내기 모달 -->
+<div id="export-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:12px; padding:32px; width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="font-size:16px; font-weight:700; color:var(--ink); margin-bottom:20px;">📨 메일 전달용 파일 생성</div>
+    <div style="font-size:13px; color:var(--ink-light); margin-bottom:20px;">포함할 항목을 선택해주세요</div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="exp-check-cover" checked style="width:16px; height:16px;"> 표지
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="exp-check-estimate" checked style="width:16px; height:16px;"> 공사 내역서
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="exp-check-cost" style="width:16px; height:16px;"> 공사원가계산서
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="exp-check-notes" style="width:16px; height:16px;"> 특기사항
+      </label>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button onclick="closeExportModal()" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:6px; background:white; cursor:pointer; font-size:13px;">취소</button>
+      <button onclick="exportClientHTML()" style="flex:2; padding:10px; border:none; border-radius:6px; background:var(--accent); color:var(--ink); font-weight:700; cursor:pointer; font-size:13px;">파일 생성</button>
+    </div>
+  </div>
+</div>
 <header class="app-header">
   <div>
     <div class="app-title">견적서 작성 시스템<span>건설 공사 내역 견적</span></div>
@@ -649,7 +675,7 @@
       <button class="btn btn-ghost" onclick="saveEstimate()" style="font-size:12px; color:#22c55e; border-color:#22c55e;">💾 저장</button>
       <span id="last-saved-info" style="font-size:10px;color:#a0aec0;white-space:nowrap;"></span>
     </div>
-    <button class="btn btn-outline" onclick="exportClientHTML()" style="border-color:#4a9eff;color:#4a9eff;">📨 메일 전달용 파일 생성</button>
+    <button class="btn btn-outline" onclick="showExportModal()" style="border-color:#4a9eff;color:#4a9eff;">📨 메일 전달용 파일 생성</button>
     <button class="btn btn-primary" onclick="printAll()">🖨️ 전체 인쇄</button>
     <button class="btn btn-outline" onclick="printOnly('cover')">표지만</button>
     <button class="btn btn-outline" onclick="printOnly('estimate')">내역서만</button>
@@ -661,9 +687,44 @@
   <div class="tab active" onclick="switchTab('cover')">📋 표지</div>
   <div class="tab" onclick="switchTab('estimate')">📐 내역서</div>
   <div class="tab" onclick="switchTab('notes')">📝 특기사항</div>
+  <div class="tab" onclick="switchTab('cost')">📊 공사원가계산서</div>
 </nav>
 
 <div class="main">
+
+
+  <!-- ══ 공사원가계산서 탭 ══ -->
+  <div class="panel" id="tab-cost">
+    <div class="card">
+      <div class="card-title">공 사 원 가 계 산 서</div>
+
+      <!-- 공사명 표시 -->
+      <div style="margin-bottom:16px; font-size:13px; color:var(--ink-light);">
+        공사명 : <span id="cost-project-name" style="font-weight:700; color:var(--ink);">—</span>
+      </div>
+
+      <div style="overflow-x:auto"><table id="cost-table" style="width:100%; min-width:800px; border-collapse:collapse; font-size:13px;">
+        <colgroup>
+          <col style="width:60px">
+          <col style="width:100px">
+          <col style="width:160px">
+          <col style="width:140px">
+          <col style="width:120px">
+          <col style="width:180px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="3" style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; font-size:14px; letter-spacing:4px;">비&nbsp;&nbsp;&nbsp;목</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">금&nbsp;&nbsp;액</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">구&nbsp;&nbsp;성&nbsp;&nbsp;비</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5;">비고</th>
+          </tr>
+        </thead>
+        <tbody id="cost-tbody">
+        </tbody>
+      </table></div>
+    </div>
+  </div>
 
   <!-- ══ 표지 탭 ══ -->
   <div class="panel active" id="tab-cover">
@@ -891,7 +952,22 @@ let rowCounter = 0;
 // ══════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════
+function showExportModal() {
+  // 특기사항 있으면 자동 체크
+  const hasNotes = notes.some(n => n.trim());
+  const notesCheck = document.getElementById('exp-check-notes');
+  if (notesCheck) notesCheck.checked = hasNotes;
+  const modal = document.getElementById('export-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeExportModal() {
+  const modal = document.getElementById('export-modal');
+  if (modal) modal.style.display = 'none';
+}
+
 function exportClientHTML() {
+  closeExportModal();
   const proj    = document.getElementById('ci-project')?.textContent?.trim() || '견적서';
   const client  = getCoverVal('c-client') || '';
   const company = getCoverVal('c-company') || '';
@@ -946,7 +1022,7 @@ function exportClientHTML() {
 
   // 특기사항
   const hasNotes = notes.some(n=>n.trim());
-  const notesHTML = hasNotes ? `
+  const notesHTML = (hasNotes && inclNotes) ? `
   <div class="section-box" id="notes" style="margin-top:32px">
     <div class="section-title">특&nbsp;&nbsp;기&nbsp;&nbsp;사&nbsp;&nbsp;항</div>
     <div style="padding:20px 24px">
@@ -1007,9 +1083,10 @@ function exportClientHTML() {
 </head>
 <body>
 <div class="sticky-nav">
-  <a class="nav-btn" href="#cover">📋 표지</a>
-  <a class="nav-btn" href="#estimate">📐 내역서</a>
-  <a class="nav-btn" href="#notes">📝 특기사항</a>
+  \${inclCover ? '<a class="nav-btn" href="#cover">📋 표지</a>' : ''}
+  \${inclEstimate ? '<a class="nav-btn" href="#estimate">📐 내역서</a>' : ''}
+  \${inclCost ? '<a class="nav-btn" href="#cost">📊 원가계산서</a>' : ''}
+  \${inclNotes ? '<a class="nav-btn" href="#notes">📝 특기사항</a>' : ''}
 </div>
 <div class="wrap">
   <div id="cover">
@@ -1031,13 +1108,13 @@ function exportClientHTML() {
         <tr><td class="co-lbl">E - m a i l</td><td>${email}</td></tr>
         <tr><td class="co-lbl">전&nbsp;&nbsp;화&nbsp;&nbsp;번&nbsp;&nbsp;호</td><td>${tel} / FAX ${fax}</td></tr>
         <tr><td class="co-lbl">업&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;태</td><td>${biztype}&nbsp;&nbsp;종&nbsp;목&nbsp;&nbsp;${bizitem}</td></tr>
-      </table>
+      </table></div>
     </div>
   </div>
 
-  </div>
+  \${inclCover ? '</div>' : ''}
   <!-- 내역서 -->
-  <div class="section-box" id="estimate">
+  \${inclEstimate ? `<div class='section-box' id='estimate'>` : ''}
     <div class="section-title">공&nbsp;&nbsp;사&nbsp;&nbsp;내&nbsp;&nbsp;역&nbsp;&nbsp;서</div>
     <table class="est">
       <thead>
@@ -1065,6 +1142,10 @@ function exportClientHTML() {
 
   ${notesHTML}
 
+  \${inclCost ? `<div class='section-box' id='cost' style='margin-top:24px;'>
+    <div class='section-title'>공&nbsp;&nbsp;사&nbsp;&nbsp;원&nbsp;&nbsp;가&nbsp;&nbsp;계&nbsp;&nbsp;산&nbsp;&nbsp;서</div>
+    <div style='padding:16px; overflow-x:auto;' id='cost-content-placeholder'></div>
+  </div>` : ''}
   <div class="watermark">㈜ 아인산업개발 · ${company} · ${tel}</div>
 </div>
 </div><!-- /edit-screen -->
@@ -1113,6 +1194,7 @@ function printOnly(section) {
 }
 
 function switchTabDirect(name) {
+  if (name === 'cost') calcCostSheet();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const tab = document.querySelector(`.tab[onclick*="''"]`);
@@ -1126,6 +1208,7 @@ function switchTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'cost') calcCostSheet();
 }
 
 // ══════════════════════════════════════════
@@ -1664,6 +1747,158 @@ function calcAllTotal() {
 // ══════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// 공사원가계산서 계산
+// ══════════════════════════════════════════
+function calcCostSheet() {
+  // 내역서에서 합계 가져오기
+  let totalMat=0, totalLab=0, totalExp=0;
+  sections.forEach(sec => {
+    sec.rows.forEach(r => {
+      totalMat += (r.수량||0)*(r.mat||0);
+      totalLab += (r.수량||0)*(r.lab||0);
+      totalExp += (r.수량||0)*(r.exp||0);
+    });
+  });
+
+  // 공사명 표시
+  const projEl = document.getElementById('cost-project-name');
+  if (projEl) projEl.textContent = document.getElementById('ci-project')?.textContent?.trim() || '—';
+
+  // 각 항목 계산
+  const directMat   = totalMat;
+  const indirectMat = 0; // 입력 없음
+  const matTotal    = directMat + indirectMat;
+
+  const directLab   = totalLab;
+  const indirectLab = Math.round(directLab * 0.055); // 직접노무비*5.5%
+  const labTotal    = directLab + indirectLab;
+
+  const machineExp    = totalExp; // 기계경비
+  const accident      = Math.round(labTotal * 0.0356);  // 노무비*3.56%
+  const employment    = Math.round(labTotal * 0.01104); // 노무비*1.104%
+  const healthIns     = Math.round(directLab * 0.045 / 2); // 직접노무비*4.5%/2
+  const pension       = Math.round(directLab * 0.045 / 2); // 직접노무비*4.5%/2
+  const longCare      = Math.round(healthIns * 0.1295); // 건강보험료*12.95%
+  const retirement    = Math.round(directLab * 0.023); // 직접노무비*2.3%
+  const safetyMgmt    = Math.round((matTotal+labTotal) * 0.0186); // (재+노)*1.86%
+  const otherExp      = 0; // 직접입력
+  const expTotal      = machineExp+accident+employment+healthIns+pension+longCare+retirement+safetyMgmt+otherExp;
+
+  const pureTotal     = matTotal + labTotal + expTotal;
+  const generalMgmt   = Math.round(pureTotal * 0.05);  // 순공사원가*5%
+  const profit        = Math.round((labTotal+expTotal+generalMgmt) * 0.03); // (노+경+관)*3%
+  const supplyAmt     = pureTotal + generalMgmt + profit;
+  const vat           = Math.round(supplyAmt * 0.1);
+  const contractAmt   = supplyAmt + vat;
+
+  const f = n => n ? Math.round(n).toLocaleString('ko-KR') : '';
+
+  // [rowspan, 중분류, 항목명, 금액, 비고, bg]
+  const rows = [
+    [4,'재료비','직 접 재 료 비', f(directMat),'', '#fff'],
+    [0,'','간 접 재 료 비', f(indirectMat),'', '#fff'],
+    [0,'','작업설, 부산물(△)', '','', '#fff'],
+    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(matTotal),'', '#f0f0f0'],
+    [3,'노무비','직 접 노 무 비', f(directLab),'', '#fff'],
+    [0,'','간 접 노 무 비', f(indirectLab),'직접노무비*5.5%', '#fff'],
+    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(labTotal),'', '#f0f0f0'],
+    [10,'경&nbsp;&nbsp;비','기 계 경 비', f(machineExp),'', '#fff'],
+    [0,'','산 재 보 험 료', f(accident),'노무비*3.56%', '#fff'],
+    [0,'','고 용 보 험 료', f(employment),'노무비*1.104%', '#fff'],
+    [0,'','국 민 건 강 보 험 료', f(healthIns),'직접노무비*4.5%/2', '#fff'],
+    [0,'','국 민 연 금 보 험 료', f(pension),'직접노무비*4.5%/2', '#fff'],
+    [0,'','노인장기요양보험료', f(longCare),'건강보험료*12.95%', '#fff'],
+    [0,'','퇴 직 공 제 부 금 비', f(retirement),'직접노무비*2.3%', '#fff'],
+    [0,'','산업안전보건관리비', f(safetyMgmt),'(재료비+노무비)*1.86%', '#fff'],
+    [0,'','기 타 경 비', f(otherExp),'', '#fff'],
+    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(expTotal),'', '#f0f0f0'],
+    [1,'계','', f(pureTotal),'', '#e8e8e8'],
+    [1,'일 반 관 리 비','', f(generalMgmt),'(재료비+노무비+경비)*5%', '#fff'],
+    [1,'이&nbsp;&nbsp;&nbsp;&nbsp;윤','', f(profit),'(노무비+경비+일반관리비)*3%', '#fff'],
+    [1,'공 급 가 액','', f(supplyAmt),'', '#fff8e6'],
+    [1,'부 가 가 세','', f(vat),'부가가치세 10%', '#fff'],
+    [1,'도 급 액','', f(contractAmt),'', '#1a1a2e'],
+  ];
+
+  const tbody = document.getElementById('cost-tbody');
+  if (!tbody) return;
+
+  // 테이블을 직접 행 단위로 구성
+  // 컬럼: [순공사원가] [중분류] [항목명] [금액] [구성비] [비고]
+  // 순공사원가는 rowspan=17로 첫 행에만
+  // 중분류는 해당 rs 값으로 rowspan
+  // 하단(계 이후)은 [중분류+항목 colspan=2] [금액] [구성비] [비고]
+
+  const B = 'border:1px solid var(--border);';
+  const P = 'padding:7px 10px;';
+
+  function cell(content, style='') {
+    return `<td style="${B}${P}${style}">${content}</td>`;
+  }
+
+  let html = '';
+
+  // ── 순공사원가 구간 (rows 0~16) ──
+  // 구성: 재료비(4행), 노무비(3행), 경비(10행) = 17행
+  const pureRows = rows.slice(0, 17);
+  const restRows = rows.slice(17);
+
+  pureRows.forEach((r, i) => {
+    const [rs, mid, item, amt, note, bg] = r;
+    const isGray = bg === '#f0f0f0';
+    const bgStyle = `background:${bg};`;
+    const fwBold = isGray ? 'font-weight:700;' : '';
+
+    html += '<tr>';
+
+    // 순공사원가 대분류 (첫 행에만 rowspan=17)
+    if (i === 0) {
+      html += `<td rowspan="17" style="${B}padding:4px; text-align:center; writing-mode:vertical-rl; font-weight:700; background:#f5f5f5; color:var(--ink); letter-spacing:2px; vertical-align:middle;">순&nbsp;공&nbsp;사&nbsp;원&nbsp;가</td>`;
+    }
+
+    // 중분류 (rs>0 일 때만 그림)
+    if (rs > 0) {
+      html += `<td rowspan="${rs}" style="${B}${P}text-align:center; font-weight:700; background:#fafafa; vertical-align:middle;">${mid}</td>`;
+    }
+
+    // 항목명
+    html += cell(item, bgStyle + fwBold);
+    // 금액
+    html += cell(amt, bgStyle + fwBold + 'text-align:right;');
+    // 구성비 (비고 내용)
+    html += cell(note, bgStyle + 'font-size:11px; color:var(--ink-light);');
+    // 비고 (빈칸)
+    html += cell('', bgStyle);
+
+    html += '</tr>';
+  });
+
+  // ── 하단 구간 (계, 일반관리비, 이윤 등) ──
+  restRows.forEach((r) => {
+    const [rs, mid, item, amt, note, bg] = r;
+    const isDark = bg === '#1a1a2e';
+    const isAccent = bg === '#fff8e6';
+    const isGray = bg === '#e8e8e8';
+    const bgStyle = `background:${bg};`;
+    const color = isDark ? 'color:white;' : '';
+    const fw = (isDark || isAccent || isGray) ? 'font-weight:700;' : '';
+
+    html += '<tr>';
+    // 비목(중분류+항목) colspan=3 (순공사원가칸 없음)
+    html += `<td colspan="3" style="${B}${P}text-align:center;${bgStyle}${color}${fw}">${mid}</td>`;
+    // 금액
+    html += cell(amt, bgStyle + color + fw + 'text-align:right;');
+    // 구성비
+    html += cell(note, bgStyle + (isDark?'color:#aaa;':'color:var(--ink-light);') + 'font-size:11px;');
+    // 비고
+    html += cell('', bgStyle + color);
+    html += '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
 function fmt(n) {
   if (!n || n === 0) return '';
   return Math.round(n).toLocaleString('ko-KR');
