@@ -1296,13 +1296,17 @@ function printAll() {
 }
 
 function printOnly(section) {
-  // 현재 탭 기억
-  const panels = document.querySelectorAll('.panel');
-  const tabs = document.querySelectorAll('.tab');
-  // 해당 탭으로 이동 후 인쇄
   switchTabDirect(section);
+  // 단일 탭 인쇄 시 page-break 임시 제거
+  const style = document.createElement('style');
+  style.id = 'print-only-style';
+  style.textContent = '#tab-cover.active, #tab-estimate.active { page-break-after: auto !important; }';
+  document.head.appendChild(style);
   setTimeout(() => {
     window.print();
+    setTimeout(() => {
+      document.getElementById('print-only-style')?.remove();
+    }, 500);
   }, 100);
 }
 
