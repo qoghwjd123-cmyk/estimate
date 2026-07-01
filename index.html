@@ -634,6 +634,7 @@
       </div>
       <div id="estimate-list" style="min-height:120px;"></div>
     </div>
+    <div id="trash-container"></div>
   </div>
 </div>
 
@@ -1179,14 +1180,18 @@ function exportClientHTML() {
   .sticky-nav{position:sticky;top:0;z-index:100;background:white;border-bottom:2px solid #f8be40;padding:10px 16px;display:flex;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
   .nav-btn{padding:6px 16px;border-radius:20px;border:1px solid #1a1a2e;background:white;color:#1a1a2e;font-size:12px;font-weight:600;cursor:pointer;font-family:"Noto Sans KR",sans-serif;text-decoration:none;transition:all 0.15s;}
   .nav-btn:hover{background:#1a1a2e;color:#f8be40;}
+  .nav-btn.active{background:#1a1a2e;color:#f8be40;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  @media print { .sticky-nav{display:none;} .tab-panel{display:none;} .tab-panel.active{display:block;} }
 </style>
 </head>
 <body>
 <div class="sticky-nav">
-  ${inclCover ? '<a class="nav-btn" href="#cover">📋 표지</a>' : ''}
-  ${inclEstimate ? '<a class="nav-btn" href="#estimate">📐 내역서</a>' : ''}
-  ${inclCost ? '<a class="nav-btn" href="#cost">📊 원가계산서</a>' : ''}
-  ${inclNotes ? '<a class="nav-btn" href="#notes">📝 특기사항</a>' : ''}
+  ${inclCover ? '<button class="nav-btn active" onclick="switchClientTab(\'cover\',this)">📋 표지</button>' : ''}
+  ${inclEstimate ? '<button class="nav-btn" onclick="switchClientTab(\'estimate\',this)">📐 내역서</button>' : ''}
+  ${inclCost ? '<button class="nav-btn" onclick="switchClientTab(\'cost\',this)">📊 원가계산서</button>' : ''}
+  ${inclNotes ? '<button class="nav-btn" onclick="switchClientTab(\'notes\',this)">📝 특기사항</button>' : ''}
 </div>
 <div class="wrap">
   <div id="cover">
@@ -1214,7 +1219,7 @@ function exportClientHTML() {
 
   ${inclCover ? '</div>' : ''}
   <!-- 내역서 -->
-  ${inclEstimate ? '<div class="section-box" id="estimate">' : ''}
+  ${inclEstimate ? '<div class="tab-panel" id="estimate">' : ''}
     <div class="section-title">공&nbsp;&nbsp;사&nbsp;&nbsp;내&nbsp;&nbsp;역&nbsp;&nbsp;서</div>
     <table class="est">
       <thead>
@@ -1240,9 +1245,18 @@ function exportClientHTML() {
     </div>
   </div>
 
-  ${notesHTML}
+  ${inclNotes && notesHTML ? '<div class="tab-panel" id="notes">' + notesHTML + '</div>' : ''}
 
   ${costHTML}
+  <scr` + `ipt>
+  function switchClientTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById(id);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+  </scr` + `ipt>
   <div class="watermark">㈜ 아인산업개발 · ${company} · ${tel}</div>
 </div>
 </div><!-- /edit-screen -->
@@ -2134,11 +2148,67 @@ function loadEstimate(id) {
 }
 
 function deleteEstimate(id) {
-  if (!confirm('이 견적서를 삭제할까요?')) return;
-  const list = getEstimates().filter(e => e.id !== id);
-  saveEstimates(list);
+  if (!confirm('삭제할까요? 휴지통에서 복구할 수 있어요.')) return;
+  const list = getEstimates();
+  const target = list.find(e => e.id === id);
+  if (!target) return;
+
+  // 휴지통에 추가
+  const trash = getTrash();
+  target.deletedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  trash.unshift(target);
+  saveTrash(trash);
+  if (window.saveToFirestore) window.saveToFirestore({...target, _trashed: true, _collection: 'trash'});
+
+  // 목록에서 제거
+  const newList = list.filter(e => e.id !== id);
+  saveEstimates(newList);
   if (window.deleteFromFirestore) window.deleteFromFirestore(id);
   renderEstimateList();
+}
+
+function getTrash() {
+  try { return JSON.parse(localStorage.getItem('ainEstimates_trash') || '[]'); } catch(e) { return []; }
+}
+function saveTrash(list) {
+  localStorage.setItem('ainEstimates_trash', JSON.stringify(list));
+}
+
+function restoreEstimate(id) {
+  const trash = getTrash();
+  const target = trash.find(e => e.id === id);
+  if (!target) return;
+  delete target.deletedAt;
+  delete target._trashed;
+
+  // 목록에 복구
+  const list = getEstimates();
+  list.unshift(target);
+  saveEstimates(list);
+  if (window.saveToFirestore) window.saveToFirestore(target);
+
+  // 휴지통에서 제거
+  saveTrash(trash.filter(e => e.id !== id));
+  renderEstimateList();
+}
+
+function permanentDelete(id) {
+  if (!confirm('영구 삭제할까요? 복구할 수 없어요.')) return;
+  saveTrash(getTrash().filter(e => e.id !== id));
+  renderEstimateList();
+}
+
+function toggleTrash() {
+  const el = document.getElementById('trash-list');
+  const btn = document.getElementById('trash-toggle-btn');
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '접기';
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '열기';
+  }
 }
 
 async function renderEstimateList() {
@@ -2174,6 +2244,35 @@ async function renderEstimateList() {
       <button class="btn btn-outline btn-sm" onclick="loadEstimate(${e.id})">열기</button>
       <button class="btn btn-sm" style="background:#fee2e2;color:#ef4444;border:none" onclick="deleteEstimate(${e.id})">삭제</button>
     </div>`).join('');
+
+  // 휴지통 렌더링
+  const trash = getTrash();
+  const trashContainer = document.getElementById('trash-container');
+  if (trashContainer) {
+    if (trash.length === 0) {
+      trashContainer.innerHTML = '';
+      return;
+    }
+    trashContainer.innerHTML = `
+      <div style="margin-top:16px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+        <div style="padding:10px 16px; background:#f8f8f8; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleTrash()">
+          <span style="font-size:12px; color:#888;">🗑️ 휴지통 (${trash.length})</span>
+          <button id="trash-toggle-btn" style="font-size:11px; color:#aaa; background:none; border:none; cursor:pointer;">열기</button>
+        </div>
+        <div id="trash-list" style="display:none;">
+          ${trash.map(e => `
+            <div style="display:flex;align-items:center;padding:10px 16px;border-top:1px solid #f0f0f0;gap:8px;">
+              <div style="flex:1;">
+                <div style="font-size:13px;color:#999;text-decoration:line-through;">${e.title||'제목없음'}</div>
+                <div style="font-size:10px;color:#bbb;">삭제일: ${e.deletedAt||''}</div>
+              </div>
+              <button class="btn btn-sm" style="background:#e6f4ea;color:#2e7d32;border:none;font-size:11px;" onclick="restoreEstimate(${e.id})">복구</button>
+              <button class="btn btn-sm" style="background:#fee2e2;color:#ef4444;border:none;font-size:11px;" onclick="permanentDelete(${e.id})">영구삭제</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
 }
 
 window.onload = () => {
