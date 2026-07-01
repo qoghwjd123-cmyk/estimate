@@ -380,12 +380,13 @@
     /* 헤더/탭/툴바 숨김 */
     .app-header, .tabs, .no-print, .input-toolbar { display: none !important; }
 
-    /* 모든 패널 보이게 */
+    /* 활성 패널만 보이게 */
     .main { padding: 0; max-width: 100%; }
-    .panel { display: block !important; }
+    .panel { display: none !important; }
+    .panel.active { display: block !important; }
 
     /* 표지 → 1페이지 */
-    #tab-cover {
+    #tab-cover.active {
       page-break-after: always;
     }
     #cover-preview-box {
@@ -1292,7 +1293,7 @@ function switchTabDirect(name) {
   if (name === 'cost') calcCostSheet();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const tab = document.querySelector(`.tab[onclick*="''"]`);
+  const tab = document.querySelector(`.tab[onclick*="'${name}'"]`);
   if (tab) tab.classList.add('active');
   const panel = document.getElementById('tab-' + name);
   if (panel) panel.classList.add('active');
