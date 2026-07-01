@@ -385,10 +385,14 @@
     .panel { display: none !important; }
     .panel.active { display: block !important; }
 
-    /* 표지 → 1페이지 */
-    #tab-cover.active {
-      page-break-after: always;
-    }
+    /* 전체 인쇄 시 페이지 구분 - 마지막 패널 제외 */
+    #tab-cover.active,
+    #tab-estimate.active { page-break-after: always; }
+    #tab-notes.active:not(:last-of-type) { page-break-after: always; }
+
+    /* no-print 요소 완전 숨김 */
+    .no-print, .add-section-btn, .section-actions,
+    .input-toolbar, .btn-danger { display: none !important; }
     #cover-preview-box {
       max-width: 100% !important;
       box-shadow: none !important;
@@ -1275,7 +1279,19 @@ function exportClientHTML() {
 }
 
 function printAll() {
+  // 모든 패널 임시로 active 추가
+  document.querySelectorAll('.panel').forEach(p => p.classList.add('active'));
   window.print();
+  // 인쇄 후 원래대로 복원 (현재 탭만 active)
+  setTimeout(() => {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    // 현재 탭 다시 active
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+      const tabName = activeTab.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+      if (tabName) document.getElementById('tab-' + tabName)?.classList.add('active');
+    }
+  }, 500);
 }
 
 function printOnly(section) {
