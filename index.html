@@ -1210,7 +1210,7 @@ function exportClientHTML() {
 
   \${inclCover ? '</div>' : ''}
   <!-- 내역서 -->
-  \${inclEstimate ? `<div class='section-box' id='estimate'>` : ''}
+  \${inclEstimate ? '<div class="section-box" id="estimate">' : ''}
     <div class="section-title">공&nbsp;&nbsp;사&nbsp;&nbsp;내&nbsp;&nbsp;역&nbsp;&nbsp;서</div>
     <table class="est">
       <thead>
@@ -1238,10 +1238,7 @@ function exportClientHTML() {
 
   ${notesHTML}
 
-  \${inclCost ? `<div class='section-box' id='cost' style='margin-top:24px;'>
-    <div class='section-title'>공&nbsp;&nbsp;사&nbsp;&nbsp;원&nbsp;&nbsp;가&nbsp;&nbsp;계&nbsp;&nbsp;산&nbsp;&nbsp;서</div>
-    <div style='padding:16px; overflow-x:auto;' id='cost-content-placeholder'></div>
-  </div>` : ''}
+  \${costHTML}
   <div class="watermark">㈜ 아인산업개발 · ${company} · ${tel}</div>
 </div>
 </div><!-- /edit-screen -->
