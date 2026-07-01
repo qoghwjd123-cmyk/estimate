@@ -1194,7 +1194,7 @@ function exportClientHTML() {
   ${inclNotes ? '<button class="nav-btn" onclick="switchClientTab(\'notes\',this)">📝 특기사항</button>' : ''}
 </div>
 <div class="wrap">
-  <div id="cover">
+  <div class="tab-panel active" id="cover">
   <div class="cover">
     <div class="cover-title"><h1>견  적  서</h1></div>
     <table class="cover-info">
@@ -1247,7 +1247,7 @@ function exportClientHTML() {
 
   ${inclNotes && notesHTML ? '<div class="tab-panel" id="notes">' + notesHTML + '</div>' : ''}
 
-  ${costHTML}
+  ${inclCost ? '<div class="tab-panel" id="cost">' : ''}${costHTML}${inclCost ? '</div>' : ''}
   <scr` + `ipt>
   function switchClientTab(id, btn) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
