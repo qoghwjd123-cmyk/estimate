@@ -686,6 +686,7 @@
     <button class="btn btn-outline" onclick="printOnly('cover')">표지만</button>
     <button class="btn btn-outline" onclick="printOnly('estimate')">내역서만</button>
     <button class="btn btn-outline" onclick="printOnly('notes')">특기사항만</button>
+    <button class="btn btn-outline" onclick="printOnly('cost')">원가계산서만</button>
   </div>
 </header>
 
@@ -1279,13 +1280,14 @@ function exportClientHTML() {
 }
 
 function printAll() {
-  // 모든 패널 임시로 active 추가
-  document.querySelectorAll('.panel').forEach(p => p.classList.add('active'));
+  // 공사원가계산서 제외하고 모든 패널 임시로 active 추가
+  document.querySelectorAll('.panel').forEach(p => {
+    if (p.id !== 'tab-cost') p.classList.add('active');
+  });
   window.print();
-  // 인쇄 후 원래대로 복원 (현재 탭만 active)
+  // 인쇄 후 원래대로 복원
   setTimeout(() => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    // 현재 탭 다시 active
     const activeTab = document.querySelector('.tab.active');
     if (activeTab) {
       const tabName = activeTab.getAttribute('onclick').match(/'(\w+)'/)?.[1];
