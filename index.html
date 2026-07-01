@@ -1183,10 +1183,10 @@ function exportClientHTML() {
 </head>
 <body>
 <div class="sticky-nav">
-  \${inclCover ? '<a class="nav-btn" href="#cover">📋 표지</a>' : ''}
-  \${inclEstimate ? '<a class="nav-btn" href="#estimate">📐 내역서</a>' : ''}
-  \${inclCost ? '<a class="nav-btn" href="#cost">📊 원가계산서</a>' : ''}
-  \${inclNotes ? '<a class="nav-btn" href="#notes">📝 특기사항</a>' : ''}
+  ${inclCover ? '<a class="nav-btn" href="#cover">📋 표지</a>' : ''}
+  ${inclEstimate ? '<a class="nav-btn" href="#estimate">📐 내역서</a>' : ''}
+  ${inclCost ? '<a class="nav-btn" href="#cost">📊 원가계산서</a>' : ''}
+  ${inclNotes ? '<a class="nav-btn" href="#notes">📝 특기사항</a>' : ''}
 </div>
 <div class="wrap">
   <div id="cover">
@@ -1212,9 +1212,9 @@ function exportClientHTML() {
     </div>
   </div>
 
-  \${inclCover ? '</div>' : ''}
+  ${inclCover ? '</div>' : ''}
   <!-- 내역서 -->
-  \${inclEstimate ? '<div class="section-box" id="estimate">' : ''}
+  ${inclEstimate ? '<div class="section-box" id="estimate">' : ''}
     <div class="section-title">공&nbsp;&nbsp;사&nbsp;&nbsp;내&nbsp;&nbsp;역&nbsp;&nbsp;서</div>
     <table class="est">
       <thead>
@@ -1242,7 +1242,7 @@ function exportClientHTML() {
 
   ${notesHTML}
 
-  \${costHTML}
+  ${costHTML}
   <div class="watermark">㈜ 아인산업개발 · ${company} · ${tel}</div>
 </div>
 </div><!-- /edit-screen -->
@@ -1257,22 +1257,6 @@ function exportClientHTML() {
   a.click();
   URL.revokeObjectURL(url);
 
-  // JSON 백업 자동 다운로드
-  setTimeout(() => {
-    const backupData = { exportedAt: new Date().toISOString(), estimates: getEstimates() };
-    const jStr = JSON.stringify(backupData, null, 2);
-    const jBlob = new Blob([jStr], {type:'application/json'});
-    const jUrl = URL.createObjectURL(jBlob);
-    const now = new Date();
-    const timeStr = String(now.getFullYear()).slice(2)+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
-    const ja = document.createElement('a');
-    ja.href = jUrl;
-    ja.download = timeStr + '_' + safeProj + '_백업.json';
-    document.body.appendChild(ja);
-    ja.click();
-    document.body.removeChild(ja);
-    URL.revokeObjectURL(jUrl);
-  }, 1500);
 }
 
 function printAll() {
