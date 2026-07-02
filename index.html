@@ -385,9 +385,15 @@
     .panel { display: none !important; }
     .panel.active { display: block !important; }
 
+    @page { margin: 10mm; size: A4 landscape; }
+
     /* 전체 인쇄 시 페이지 구분 - 마지막 패널 제외 */
     #tab-cover.active { page-break-after: always; }
     #tab-estimate.active { page-break-after: always; }
+
+    /* 내역서 테이블 짤림 방지 */
+    table.estimate { font-size: 9px !important; width: 100% !important; }
+    table.estimate th, table.estimate td { padding: 4px 3px !important; }
 
     /* no-print 요소 완전 숨김 */
     .no-print, .add-section-btn, .section-actions,
