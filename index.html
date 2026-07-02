@@ -392,8 +392,17 @@
     #tab-estimate.active { page-break-after: always; }
 
     /* 내역서 테이블 짤림 방지 */
-    table.estimate { font-size: 9px !important; width: 100% !important; }
-    table.estimate th, table.estimate td { padding: 4px 3px !important; }
+    #tab-estimate { overflow: visible !important; }
+    #tab-estimate .table-wrap { overflow: visible !important; }
+    table.estimate { 
+      font-size: 8px !important; 
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    table.estimate th, table.estimate td { 
+      padding: 3px 2px !important; 
+      word-break: break-all !important;
+    }
 
     /* no-print 요소 완전 숨김 */
     .no-print, .add-section-btn, .section-actions,
