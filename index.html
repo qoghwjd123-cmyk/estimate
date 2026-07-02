@@ -400,9 +400,15 @@
       table-layout: fixed !important;
     }
     table.estimate th, table.estimate td { 
-      padding: 3px 2px !important; 
-      word-break: break-all !important;
+      padding: 3px 2px !important;
     }
+    table.estimate col.col-name  { width: 16% !important; }
+    table.estimate col.col-spec  { width: 14% !important; }
+    table.estimate col.col-unit  { width: 6% !important; }
+    table.estimate col.col-qty   { width: 5% !important; }
+    table.estimate col.col-price { width: 7% !important; }
+    table.estimate col.col-amt   { width: 8% !important; }
+    table.estimate col.col-del   { display: none !important; }
 
     /* no-print 요소 완전 숨김 */
     .no-print, .add-section-btn, .section-actions,
