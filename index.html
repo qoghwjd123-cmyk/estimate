@@ -452,8 +452,7 @@
     .card, .notes-area { box-shadow: none !important; border: none !important; }
 
     /* 페이지 여백 */
-    @page { margin: 15mm; size: A4 landscape; }
-    @page :first { size: A4 portrait; }
+    @page { margin: 10mm; size: A4 landscape; }
   }
 
   /* ── COVER SHEET PREVIEW ── */
@@ -1303,17 +1302,16 @@ function printAll() {
 
 function printOnly(section) {
   switchTabDirect(section);
-  // 단일 탭 인쇄 시 page-break 임시 제거
   const style = document.createElement('style');
   style.id = 'print-only-style';
-  style.textContent = '#tab-cover.active, #tab-estimate.active { page-break-after: auto !important; }';
+  style.textContent = '@media print { #tab-cover, #tab-estimate, #tab-notes, #tab-cost { page-break-after: auto !important; break-after: auto !important; } }';
   document.head.appendChild(style);
   setTimeout(() => {
     window.print();
     setTimeout(() => {
       document.getElementById('print-only-style')?.remove();
     }, 500);
-  }, 100);
+  }, 150);
 }
 
 function switchTabDirect(name) {
