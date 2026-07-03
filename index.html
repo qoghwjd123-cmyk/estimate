@@ -1451,7 +1451,7 @@ function exportClientHTML() {
     <div class="cover-title"><h1>견  적  서</h1></div>
     <table class="cover-info">
       <tr><td class="cv-lbl">* 공&nbsp;&nbsp;사&nbsp;&nbsp;명</td><td colspan="3">${proj}</td></tr>
-      <tr><td class="cv-lbl">* 공사 금액</td><td colspan="3" class="cv-amt">${korAmt}&nbsp;&nbsp;&nbsp;₩&nbsp;&nbsp;${numAmt}</td></tr>
+      <tr><td class="cv-lbl">* 공사 금액</td><td colspan="3" class="cv-amt" style="display:flex;justify-content:space-between;align-items:center;"><span>${korAmt}</span><span>₩&nbsp;${numAmt}</span></td></tr>
       <tr><td class="cv-lbl">* 발&nbsp;&nbsp;주&nbsp;&nbsp;처</td><td>${client}</td><td class="cv-lbl">* 견&nbsp;&nbsp;적&nbsp;&nbsp;일</td><td>${dateStr}</td></tr>
     </table>
     <div class="cover-notes">
@@ -1493,7 +1493,7 @@ function exportClientHTML() {
       <div class="grand-item"><div class="gl">자 재 비</div><div class="gv">${gtM.toLocaleString('ko-KR')}</div></div>
       <div class="grand-item"><div class="gl">노 무 비</div><div class="gv">${gtL.toLocaleString('ko-KR')}</div></div>
       <div class="grand-item"><div class="gl">경 비</div><div class="gv">${gtE.toLocaleString('ko-KR')}</div></div>
-      <div class="grand-item accent"><div class="gl">합 계 금 액</div><div class="gv">${(gtM+gtL+gtE).toLocaleString('ko-KR')}</div></div>
+      <div class="grand-item accent"><div class="gl">합 계 금 액</div><div class="gv">${(gtM+gtL+gtE).toLocaleString('ko-KR')}<div style="font-size:10px;color:#aaa;font-weight:400;margin-top:2px;">(VAT별도)</div></div></div>
     </div>
   </div>
 
