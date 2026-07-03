@@ -929,15 +929,7 @@
     <button class="add-section-btn" onclick="addSection()">
       <span style="font-size:18px">＋</span> 새 섹션 추가 (예: A동 공사, 철거공사 등)
     </button>
-    <div class="grand-total-box">
-      <div class="gt-title">총 합 계</div>
-      <div class="grand-total-grid">
-        <div class="gt-item"><div class="gt-label">자 재 비</div><div class="gt-value" id="gt-material">0</div></div>
-        <div class="gt-item"><div class="gt-label">노 무 비</div><div class="gt-value" id="gt-labor">0</div></div>
-        <div class="gt-item"><div class="gt-label">경 비</div><div class="gt-value" id="gt-expense">0</div></div>
-        <div class="gt-item accent"><div class="gt-label">합 계 금 액</div><div class="gt-value" id="gt-total">0</div><div style="font-size:11px;color:#aaa;margin-top:4px;">(VAT 별도)</div></div>
-      </div>
-    </div>
+
   </div>
 
   <!-- ══ 특기사항 탭 ══ -->
@@ -1444,7 +1436,7 @@ function renderSections() {
     el.innerHTML = buildSectionHTML(sec);
     container.appendChild(el);
   });
-  calcGrandTotal();
+  setTimeout(calcGrandTotal, 0);
 }
 
 function addRowButtons() {
@@ -1516,6 +1508,19 @@ function buildSectionHTML(sec) {
           <td></td><td class="num">${fmt(subtotal.total)}</td>
           <td class="no-print" style="width:28px;"></td>
         </tr>
+      ${sections.indexOf(sec) === sections.length-1 ? `
+      <tr id="grand-total-tr" style="background:var(--section-bg);">
+        <td colspan="4" style="padding:8px 10px; text-align:right; font-weight:700; color:#2d2d2d; border:1px solid rgba(0,0,0,0.1); letter-spacing:2px;">총 &nbsp; 합 &nbsp; 계</td>
+        <td style="border:1px solid rgba(0,0,0,0.1);"></td>
+        <td class="num" style="font-weight:700;color:#2d2d2d;border:1px solid rgba(0,0,0,0.1);" id="gt-material">0</td>
+        <td style="border:1px solid rgba(0,0,0,0.1);"></td>
+        <td class="num" style="font-weight:700;color:#2d2d2d;border:1px solid rgba(0,0,0,0.1);" id="gt-labor">0</td>
+        <td style="border:1px solid rgba(0,0,0,0.1);"></td>
+        <td class="num" style="font-weight:700;color:#2d2d2d;border:1px solid rgba(0,0,0,0.1);" id="gt-expense">0</td>
+        <td style="border:1px solid rgba(0,0,0,0.1);"></td>
+        <td class="num" style="font-weight:700;color:var(--accent-dark);font-size:13px;border:1px solid rgba(0,0,0,0.1);" id="gt-total">0<div style="font-size:10px;color:#888;font-weight:400;">(VAT별도)</div></td>
+        <td class="no-print" style="border:none;"></td>
+      </tr>` : ''}
       </tfoot>
     </table>
   </div>
@@ -1812,367 +1817,22 @@ function calcGrandTotal() {
     mat += st.mat; lab += st.lab; exp += st.exp;
   });
   const total = mat + lab + exp;
-  document.getElementById('gt-material').textContent = fmt(mat);
-  document.getElementById('gt-labor').textContent = fmt(lab);
-  document.getElementById('gt-expense').textContent = fmt(exp);
-  document.getElementById('gt-total').textContent = fmt(total);
+
+  // 총합계 행 업데이트
+  const gtM = document.getElementById('gt-material');
+  const gtL = document.getElementById('gt-labor');
+  const gtE = document.getElementById('gt-expense');
+  const gtT = document.getElementById('gt-total');
+  if (gtM) gtM.textContent = fmt(mat);
+  if (gtL) gtL.textContent = fmt(lab);
+  if (gtE) gtE.textContent = fmt(exp);
+  if (gtT) gtT.innerHTML = fmt(total) + '<div style="font-size:10px;color:#888;font-weight:400;">(VAT별도)</div>';
+
   const korEl = document.getElementById('prev-amount-kor');
   const numEl = document.getElementById('prev-amount-num');
   if (korEl) korEl.textContent = numToKor(total);
   if (numEl) numEl.textContent = total ? fmt(total) : '-';
   updatePreview();
-}
-
-// ══════════════════════════════════════════
-// COVER PREVIEW
-// ══════════════════════════════════════════
-function numToKor(n) {
-  if (!n || n === 0) return '일금 영원정';
-  const units = ['','일','이','삼','사','오','육','칠','팔','구'];
-  const pos   = ['','십','백','천'];
-  const big   = ['','만','억','조'];
-  let str = String(Math.round(n));
-  let result = '';
-  let bigIdx = 0;
-  while (str.length > 0) {
-    const chunk = str.slice(-4);
-    str = str.slice(0, -4);
-    let chunkStr = '';
-    for (let i = 0; i < chunk.length; i++) {
-      const d = +chunk[i];
-      const p = chunk.length - 1 - i;
-      if (d === 0) continue;
-      chunkStr += (d === 1 && p > 0 ? '' : units[d]) + pos[p];
-    }
-    if (chunkStr) result = chunkStr + big[bigIdx] + result;
-    bigIdx++;
-  }
-  return '일금 ' + result + '원정';
-}
-
-// 자동저장 디바운스
-let autoSaveTimer = null;
-function triggerAutoSave() {
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(() => {
-    saveEstimate(true);
-  }, 1000);
-}
-
-function syncCover() {
-  // 날짜 포맷
-  const dateEl = document.getElementById('ci-date');
-  const datePreview = document.getElementById('prev-date');
-  // prev-date는 없어짐 (ci-date 자체가 표지), 날짜 표시용 span 없으므로 skip
-}
-
-function updatePreview() { syncCover(); }
-
-function addNote(text='') {
-  notes.push(text);
-  renderNotes();
-}
-
-function renderNotes() {
-  const list = document.getElementById('notes-list');
-  list.innerHTML = notes.map((n, i) => `
-    <div class="note-item">
-      <div class="note-num">${i+1}</div>
-      <textarea placeholder="특기사항 내용 입력..." oninput="notes[${i}]=this.value">${esc(n)}</textarea>
-      <button class="btn btn-ghost btn-sm" onclick="removeNote(${i})">✕</button>
-    </div>`).join('');
-}
-
-function removeNote(i) {
-  notes.splice(i, 1);
-  renderNotes();
-}
-
-// ══════════════════════════════════════════
-// EXCEL EXPORT — 기존 양식 그대로
-// ══════════════════════════════════════════
-function exportExcel() {
-  const wb = XLSX.utils.book_new();
-  const total = calcAllTotal();
-  const proj    = getCoverVal('c-project');
-  const client  = getCoverVal('c-client');
-  const company = getCoverVal('c-company');
-  const biznum  = getCoverVal('c-biznum');
-  const address = getCoverVal('c-address');
-  const email   = getCoverVal('c-email');
-  const tel     = getCoverVal('c-tel');
-  const fax     = getCoverVal('c-fax');
-  const biztype = getCoverVal('c-biztype');
-  const bizitem = getCoverVal('c-bizitem');
-  const dateRaw = document.getElementById('ci-date')?.value||'';
-  const dateStr = dateRaw?(()=>{const[y,m,d]=dateRaw.split('-');return y+'년 '+(+m)+'월 '+(+d)+'일';})():'';
-  const korAmt  = numToKor(total);
-  const numAmt  = total ? total.toLocaleString('ko-KR') : '-';
-
-  // ══ 표지 ══
-  const coverData = [
-    ['견  적  서'],
-    [],
-    ['* 공  사  명', proj],
-    ['* 공사 금액', korAmt + '   ₩  ' + numAmt],
-    ['* 발  주  처', client, '* 견  적  일', dateStr],
-    [],
-    ['◆ 부가세 별도'],
-    ['◆ 다음과 같이 견적 합니다.'],
-    ['◆ 내역에 없는 부분은 정산처리 입니다.'],
-    [],
-    ['상      호', company],
-    ['사 업 자 번 호', biznum],
-    ['주      소', address],
-    ['E - m a i l', email],
-    ['전  화  번  호', tel + ' / FAX ' + fax],
-    ['업      태', biztype + '   종  목   ' + bizitem],
-  ];
-  const ws1 = XLSX.utils.aoa_to_sheet(coverData);
-  ws1['!cols'] = [{wch:16},{wch:40},{wch:14},{wch:20}];
-  XLSX.utils.book_append_sheet(wb, ws1, '표지');
-
-  // ══ 내역서 ══
-  const estData = [];
-  estData.push(['[공사명: ' + proj + ']']);
-  estData.push(['품명','규격','단위','수량','자재비_단가','자재비_금액','노무비_단가','노무비_금액','경비_단가','경비_금액','합계_단가','합계_금액','비고']);
-
-  let gtM=0, gtL=0, gtE=0;
-  sections.forEach((sec,si) => {
-    estData.push(['[' + (si+1) + '. ' + (sec.name||'') + ']','','','','','','','','','','','','']);
-    let sM=0, sL=0, sE=0;
-    sec.rows.forEach(r => {
-      const mA=(r.수량||0)*(r.mat||0), lA=(r.수량||0)*(r.lab||0), eA=(r.수량||0)*(r.exp||0);
-      const tA=mA+lA+eA, tU=(r.mat||0)+(r.lab||0)+(r.exp||0);
-      sM+=mA; sL+=lA; sE+=eA;
-      estData.push([r.품명||'', r.규격||'', r.단위||'', r.수량||0, r.mat||0, mA, r.lab||0, lA, r.exp||0, eA, tU, tA, '']);
-    });
-    const sT=sM+sL+sE; gtM+=sM; gtL+=sL; gtE+=sE;
-    estData.push(['소   계','','','','',sM,'',sL,'',sE,'',sT,'']);
-    estData.push([]);
-  });
-  estData.push(['총   합   계','','','','',gtM,'',gtL,'',gtE,'',gtM+gtL+gtE,'']);
-
-  const ws2 = XLSX.utils.aoa_to_sheet(estData);
-
-  // 숫자 칸 천단위 콤마 포맷
-  const numCols = [3,4,5,6,7,8,9,10,11]; // D~L (0-based)
-  const range = XLSX.utils.decode_range(ws2['!ref']);
-  for (let R=0; R<=range.e.r; R++) {
-    numCols.forEach(C => {
-      const addr = XLSX.utils.encode_cell({r:R, c:C});
-      if (ws2[addr] && ws2[addr].t === 'n') {
-        ws2[addr].z = '#,##0';
-      }
-    });
-  }
-
-  ws2['!cols'] = [
-    {wch:20},{wch:20},{wch:8},{wch:7},
-    {wch:12},{wch:13},{wch:12},{wch:13},
-    {wch:12},{wch:13},{wch:12},{wch:13},
-    {wch:8}
-  ];
-  XLSX.utils.book_append_sheet(wb, ws2, '내역서');
-
-  // ══ 특기사항 (내용 있을 때만) ══
-  const hasNotes = notes.some(n => n.trim() !== '');
-  if (hasNotes) {
-    const notesData = [
-      ['특  기  사  항'],
-      ['[공사명] ' + proj],
-      []
-    ];
-    notes.filter(n=>n.trim()).forEach((n,i) => notesData.push([(i+1)+'.', n]));
-    const ws3 = XLSX.utils.aoa_to_sheet(notesData);
-    ws3['!cols'] = [{wch:4},{wch:80}];
-    XLSX.utils.book_append_sheet(wb, ws3, '특기사항');
-  }
-
-  XLSX.writeFile(wb, (proj||'견적서') + '.xlsx');
-}
-
-// 헬퍼: 셀 병합 등록
-function merge(ws, r1,c1,r2,c2) {
-  if (!ws['!merges']) ws['!merges'] = [];
-  ws['!merges'].push({s:{r:r1,c:c1}, e:{r:r2,c:c2}});
-}
-// 헬퍼: input 값 읽기
-function v(id) {
-  const el = document.getElementById(id);
-  if (!el) return '';
-  // contenteditable span
-  if (el.isContentEditable !== undefined && el.tagName !== 'INPUT') return el.textContent.trim();
-  return el.value || '';
-}
-function getCoverVal(field) {
-  const map = {
-    'c-project': 'ci-project', 'c-client': 'ci-client', 'c-company': 'ci-company',
-    'c-biznum': 'ci-biznum', 'c-address': 'ci-address', 'c-email': 'ci-email',
-    'c-tel': 'ci-tel', 'c-fax': 'ci-fax', 'c-biztype': 'ci-biztype', 'c-bizitem': 'ci-bizitem'
-  };
-  return v(map[field] || field);
-}
-
-function calcAllTotal() {
-  let t=0;
-  sections.forEach(sec => { const st=calcSubtotal(sec); t+=st.total; });
-  return t;
-}
-
-// ══════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════
-// ══════════════════════════════════════════
-// 공사원가계산서 계산
-// ══════════════════════════════════════════
-function calcCostSheet() {
-  // 내역서에서 합계 가져오기
-  let totalMat=0, totalLab=0, totalExp=0;
-  sections.forEach(sec => {
-    sec.rows.forEach(r => {
-      totalMat += (r.수량||0)*(r.mat||0);
-      totalLab += (r.수량||0)*(r.lab||0);
-      totalExp += (r.수량||0)*(r.exp||0);
-    });
-  });
-
-  // 공사명 표시
-  const projEl = document.getElementById('cost-project-name');
-  if (projEl) projEl.textContent = document.getElementById('ci-project')?.textContent?.trim() || '—';
-
-  // 각 항목 계산
-  const directMat   = totalMat;
-  const indirectMat = 0; // 입력 없음
-  const matTotal    = directMat + indirectMat;
-
-  const directLab   = totalLab;
-  const indirectLab = Math.round(directLab * 0.055); // 직접노무비*5.5%
-  const labTotal    = directLab + indirectLab;
-
-  const machineExp    = totalExp; // 기계경비
-  const accident      = Math.round(labTotal * 0.0356);  // 노무비*3.56%
-  const employment    = Math.round(labTotal * 0.01104); // 노무비*1.104%
-  const healthIns     = Math.round(directLab * 0.045 / 2); // 직접노무비*4.5%/2
-  const pension       = Math.round(directLab * 0.045 / 2); // 직접노무비*4.5%/2
-  const longCare      = Math.round(healthIns * 0.1295); // 건강보험료*12.95%
-  const retirement    = Math.round(directLab * 0.023); // 직접노무비*2.3%
-  const safetyMgmt    = Math.round((matTotal+labTotal) * 0.0186); // (재+노)*1.86%
-  const otherExp      = 0; // 직접입력
-  const expTotal      = machineExp+accident+employment+healthIns+pension+longCare+retirement+safetyMgmt+otherExp;
-
-  const pureTotal     = matTotal + labTotal + expTotal;
-  const generalMgmt   = Math.round(pureTotal * 0.05);  // 순공사원가*5%
-  const profit        = Math.round((labTotal+expTotal+generalMgmt) * 0.03); // (노+경+관)*3%
-  const supplyAmt     = pureTotal + generalMgmt + profit;
-  const vat           = Math.round(supplyAmt * 0.1);
-  const contractAmt   = supplyAmt + vat;
-
-  const f = n => n ? Math.round(n).toLocaleString('ko-KR') : '';
-
-  // [rowspan, 중분류, 항목명, 금액, 비고, bg]
-  const rows = [
-    [4,'재료비','직 접 재 료 비', f(directMat),'', '#fff'],
-    [0,'','간 접 재 료 비', f(indirectMat),'', '#fff'],
-    [0,'','작업설, 부산물(△)', '','', '#fff'],
-    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(matTotal),'', '#f0f0f0'],
-    [3,'노무비','직 접 노 무 비', f(directLab),'', '#fff'],
-    [0,'','간 접 노 무 비', f(indirectLab),'직접노무비*5.5%', '#fff'],
-    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(labTotal),'', '#f0f0f0'],
-    [10,'경&nbsp;&nbsp;비','기 계 경 비', f(machineExp),'', '#fff'],
-    [0,'','산 재 보 험 료', f(accident),'노무비*3.56%', '#fff'],
-    [0,'','고 용 보 험 료', f(employment),'노무비*1.104%', '#fff'],
-    [0,'','국 민 건 강 보 험 료', f(healthIns),'직접노무비*4.5%/2', '#fff'],
-    [0,'','국 민 연 금 보 험 료', f(pension),'직접노무비*4.5%/2', '#fff'],
-    [0,'','노인장기요양보험료', f(longCare),'건강보험료*12.95%', '#fff'],
-    [0,'','퇴 직 공 제 부 금 비', f(retirement),'직접노무비*2.3%', '#fff'],
-    [0,'','산업안전보건관리비', f(safetyMgmt),'(재료비+노무비)*1.86%', '#fff'],
-    [0,'','기 타 경 비', f(otherExp),'', '#fff'],
-    [0,'','[소&nbsp;&nbsp;&nbsp;&nbsp;계]', f(expTotal),'', '#f0f0f0'],
-    [1,'계','', f(pureTotal),'', '#e8e8e8'],
-    [1,'일 반 관 리 비','', f(generalMgmt),'(재료비+노무비+경비)*5%', '#fff'],
-    [1,'이&nbsp;&nbsp;&nbsp;&nbsp;윤','', f(profit),'(노무비+경비+일반관리비)*3%', '#fff'],
-    [1,'공 급 가 액','', f(supplyAmt),'', '#fff8e6'],
-    [1,'부 가 가 세','', f(vat),'부가가치세 10%', '#fff'],
-    [1,'도 급 액','', f(contractAmt),'', '#1a1a2e'],
-  ];
-
-  const tbody = document.getElementById('cost-tbody');
-  if (!tbody) return;
-
-  // 테이블을 직접 행 단위로 구성
-  // 컬럼: [순공사원가] [중분류] [항목명] [금액] [구성비] [비고]
-  // 순공사원가는 rowspan=17로 첫 행에만
-  // 중분류는 해당 rs 값으로 rowspan
-  // 하단(계 이후)은 [중분류+항목 colspan=2] [금액] [구성비] [비고]
-
-  const B = 'border:1px solid var(--border);';
-  const P = 'padding:7px 10px;';
-
-  function cell(content, style='') {
-    return `<td style="${B}${P}${style}">${content}</td>`;
-  }
-
-  let html = '';
-
-  // ── 순공사원가 구간 (rows 0~16) ──
-  // 구성: 재료비(4행), 노무비(3행), 경비(10행) = 17행
-  const pureRows = rows.slice(0, 17);
-  const restRows = rows.slice(17);
-
-  pureRows.forEach((r, i) => {
-    const [rs, mid, item, amt, note, bg] = r;
-    const isGray = bg === '#f0f0f0';
-    const bgStyle = `background:${bg};`;
-    const fwBold = isGray ? 'font-weight:700;' : '';
-
-    html += '<tr>';
-
-    // 순공사원가 대분류 (첫 행에만 rowspan=17)
-    if (i === 0) {
-      html += `<td rowspan="17" style="${B}padding:4px; text-align:center; writing-mode:vertical-rl; font-weight:700; background:#f5f5f5; color:var(--ink); letter-spacing:2px; vertical-align:middle;">순&nbsp;공&nbsp;사&nbsp;원&nbsp;가</td>`;
-    }
-
-    // 중분류 (rs>0 일 때만 그림)
-    if (rs > 0) {
-      html += `<td rowspan="${rs}" style="${B}${P}text-align:center; font-weight:700; background:#fafafa; vertical-align:middle;">${mid}</td>`;
-    }
-
-    // 항목명
-    html += cell(item, bgStyle + fwBold);
-    // 금액
-    html += cell(amt, bgStyle + fwBold + 'text-align:right;');
-    // 구성비 (비고 내용)
-    html += cell(note, bgStyle + 'font-size:11px; color:var(--ink-light);');
-    // 비고 (빈칸)
-    html += cell('', bgStyle);
-
-    html += '</tr>';
-  });
-
-  // ── 하단 구간 (계, 일반관리비, 이윤 등) ──
-  restRows.forEach((r) => {
-    const [rs, mid, item, amt, note, bg] = r;
-    const isDark = bg === '#1a1a2e';
-    const isAccent = bg === '#fff8e6';
-    const isGray = bg === '#e8e8e8';
-    const bgStyle = `background:${bg};`;
-    const color = isDark ? 'color:white;' : '';
-    const fw = (isDark || isAccent || isGray) ? 'font-weight:700;' : '';
-
-    html += '<tr>';
-    // 비목(중분류+항목) colspan=3 (순공사원가칸 없음)
-    html += `<td colspan="3" style="${B}${P}text-align:center;${bgStyle}${color}${fw}">${mid}</td>`;
-    // 금액
-    html += cell(amt, bgStyle + color + fw + 'text-align:right;');
-    // 구성비
-    html += cell(note, bgStyle + (isDark?'color:#aaa;':'color:var(--ink-light);') + 'font-size:11px;');
-    // 비고
-    html += cell('', bgStyle + color);
-    html += '</tr>';
-  });
-
-  tbody.innerHTML = html;
 }
 
 function fmt(n) {
