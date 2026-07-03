@@ -533,11 +533,11 @@
   }
   /* 제목 행 */
   .cv-title-row {
-    background: #1a1a2e;
-    border-bottom: 2px solid #000;
+    background: #f5f0e8;
+    border-bottom: 2px solid #c8b89a;
     padding: 18px 24px 14px;
   }
-  .cv-title-row h2 { color: white !important; }
+  .cv-title-row h2 { color: #1a1a2e !important; }
   .cv-title-row h2 {
     font-family: 'Noto Serif KR', serif;
     font-size: 32px;
@@ -1847,6 +1847,68 @@ function esc(s) {
 // ══════════════════════════════════════════
 // INIT — 샘플 데이터
 // ══════════════════════════════════════════
+// ══ 누락된 함수들 ══
+function numToKor(n) {
+  if (!n || n === 0) return '일금 영원정';
+  const units = ['','일','이','삼','사','오','육','칠','팔','구'];
+  const pos   = ['','십','백','천'];
+  const big   = ['','만','억','조'];
+  let str = String(Math.round(n));
+  let result = '';
+  let bigIdx = 0;
+  while (str.length > 0) {
+    const chunk = str.slice(-4);
+    str = str.slice(0, -4);
+    let chunkStr = '';
+    for (let i = 0; i < chunk.length; i++) {
+      const d = +chunk[i];
+      const p = chunk.length - 1 - i;
+      if (d === 0) continue;
+      chunkStr += (d === 1 && p > 0 ? '' : units[d]) + pos[p];
+    }
+    if (chunkStr) result = chunkStr + big[bigIdx] + result;
+    bigIdx++;
+  }
+  return '일금 ' + result + '원정';
+}
+
+function syncCover() {
+  const dateEl = document.getElementById('ci-date');
+  const datePreview = document.getElementById('prev-date');
+  if (dateEl && datePreview) {
+    const v = dateEl.value;
+    if (v) {
+      const [y,m,d] = v.split('-');
+      datePreview.textContent = y + '년 ' + (+m) + '월 ' + (+d) + '일';
+    } else {
+      datePreview.textContent = '—';
+    }
+  }
+}
+
+function updatePreview() { syncCover(); }
+
+function addNote(text='') {
+  notes.push(text);
+  renderNotes();
+}
+
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  if (!list) return;
+  list.innerHTML = notes.map((n, i) => `
+    <div class="note-item">
+      <div class="note-num">${i+1}</div>
+      <textarea placeholder="특기사항 내용 입력..." oninput="notes[${i}]=this.value">${esc(n)}</textarea>
+      <button class="btn btn-ghost btn-sm" onclick="removeNote(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeNote(i) {
+  notes.splice(i, 1);
+  renderNotes();
+}
+
 // ══ LocalStorage 견적 관리 ══
 const STORAGE_KEY = 'ainEstimates';
 let currentEstimateId = null;
@@ -2056,18 +2118,22 @@ async function renderEstimateList() {
   const el = document.getElementById('estimate-list');
   el.innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:13px;">불러오는 중...</div>';
 
-  // Firestore 준비될 때까지 최대 5초 대기
+  // Firestore 준비될 때까지 최대 2초 대기
   let waited = 0;
-  while (!window.loadFromFirestore && waited < 5000) {
+  while (!window.loadFromFirestore && waited < 2000) {
     await new Promise(r => setTimeout(r, 200));
     waited += 200;
   }
 
-  // Firestore에서 최신 데이터 동기화
+  // Firestore에서 최신 데이터 동기화 (실패해도 LocalStorage 사용)
   if (window.loadFromFirestore) {
-    const cloudList = await window.loadFromFirestore();
-    if (cloudList && cloudList.length > 0) {
-      saveEstimates(cloudList);
+    try {
+      const cloudList = await window.loadFromFirestore();
+      if (cloudList && cloudList.length > 0) {
+        saveEstimates(cloudList);
+      }
+    } catch(e) {
+      console.log('Firestore 로드 실패, LocalStorage 사용:', e);
     }
   }
 
