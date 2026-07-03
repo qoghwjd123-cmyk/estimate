@@ -440,12 +440,21 @@
     #tab-estimate { overflow: visible !important; }
     #tab-estimate .table-wrap { overflow: visible !important; }
     table.estimate { 
-      font-size: 8px !important; 
       width: 100% !important;
       table-layout: fixed !important;
     }
-    table.estimate th, table.estimate td { 
+    /* 일반 행: 품명/규격/단위/수량/단가(input)와 금액(계산결과, td) 폰트 크기를 하나로 통일 */
+    table.estimate td,
+    table.estimate td input,
+    table.estimate .unit-input {
+      font-size: 9px !important;
       padding: 3px 2px !important;
+    }
+    /* 소계/총합계: 모든 칸(라벨+금액) 폰트 크기 통일 */
+    table.estimate tr.subtotal td,
+    table.estimate tr.total-row td,
+    #grand-total-tr td {
+      font-size: 11px !important;
     }
     table.estimate col.col-name  { width: 16% !important; }
     table.estimate col.col-spec  { width: 14% !important; }
@@ -503,7 +512,7 @@
     }
 
     /* 테이블 */
-    table.estimate { font-size: 10px; border-collapse: collapse; }
+    table.estimate { border-collapse: collapse; }
     table.estimate th, table.estimate td { border: 1px solid #999 !important; }
     .table-wrap { border: none !important; }
 
