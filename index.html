@@ -188,7 +188,7 @@
   /* 컬럼 너비 고정 */
   table.estimate col.col-name  { width: 140px; }
   table.estimate col.col-spec  { width: 120px; }
-  table.estimate col.col-unit  { width: 80px; }
+  table.estimate col.col-unit  { width: 65px; }
   table.estimate col.col-qty   { width: 60px; }
   table.estimate col.col-price { width: 80px; }
   table.estimate col.col-amt   { width: 80px; }
@@ -1514,8 +1514,7 @@ function buildSectionHTML(sec) {
           <td></td><td class="num">${fmt(subtotal.lab)}</td>
           <td></td><td class="num">${fmt(subtotal.exp)}</td>
           <td></td><td class="num">${fmt(subtotal.total)}</td>
-          <td class="no-print"></td>
-
+          <td class="no-print" style="width:28px;"></td>
         </tr>
       </tfoot>
     </table>
