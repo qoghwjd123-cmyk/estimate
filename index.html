@@ -1082,7 +1082,7 @@ function buildCostHTML() {
   const P = 'padding:6px 10px;';
   const bp = B+P;
 
-  let h = '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">';
+  let h = '<table style="width:100%;min-width:640px;border-collapse:collapse;font-size:12px;table-layout:fixed;">';
   h += '<colgroup><col style="width:6%"><col style="width:10%"><col style="width:18%"><col style="width:15%"><col style="width:25%"><col style="width:26%"></colgroup>';
   h += '<thead><tr>';
   h += '<th colspan="3" style="'+bp+'text-align:center;background:#f5f5f5;letter-spacing:3px;">비&nbsp;&nbsp;&nbsp;목</th>';
@@ -1393,7 +1393,14 @@ function exportClientHTML() {
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Sans KR',sans-serif;background:#f0ede6;color:#1a1a2e;padding:32px 16px;}
-  .wrap{max-width:960px;margin:0 auto;}
+  .wrap{width:92%;max-width:1400px;margin:0 auto;}
+  @media (max-width:700px){
+    body{padding:16px 8px;}
+    .wrap{width:96%;}
+    .cover-title h1{font-size:26px;letter-spacing:8px;}
+    .cover-co{justify-content:flex-start;}
+    .grand{flex-wrap:wrap;gap:16px 24px;justify-content:flex-start;}
+  }
 
   /* 표지 */
   .cover{background:white;border:1px solid #bbb;margin-bottom:40px;}
@@ -1412,7 +1419,7 @@ function exportClientHTML() {
   /* 내역서 */
   .section-box{background:white;border-radius:4px;overflow:hidden;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
   .section-title{background:#333347;color:#c8a96e;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;letter-spacing:3px;padding:12px 20px;}
-  table.est{width:100%;border-collapse:collapse;font-size:12px;}
+  table.est{width:100%;min-width:820px;border-collapse:collapse;font-size:12px;}
   table.est th{background:#f0ece0;font-weight:700;font-size:11px;padding:7px 6px;border:1px solid #ccc;text-align:center;white-space:nowrap;} table.est{width:100%;table-layout:fixed;} table.est td:nth-child(1), table.est th:nth-child(1){width:13%;word-break:keep-all;} table.est td:nth-child(2){width:14%;word-break:break-all;} table.est td:nth-child(3){width:5%;} table.est td:nth-child(4){width:5%;} table.est td:nth-child(5), table.est td:nth-child(6), table.est td:nth-child(7), table.est td:nth-child(8), table.est td:nth-child(9), table.est td:nth-child(10), table.est td:nth-child(11), table.est td:nth-child(12){width:8%;white-space:nowrap;font-size:11px;}
   table.est th.grp{background:#e0dcd0;font-size:10px;color:#666;}
   table.est td{border:1px solid #ddd;padding:5px 6px;}
@@ -1473,6 +1480,7 @@ function exportClientHTML() {
   <!-- 내역서 -->
   ${inclEstimate ? '<div class="tab-panel" id="estimate">' : ''}
     <div class="section-title">공&nbsp;&nbsp;사&nbsp;&nbsp;내&nbsp;&nbsp;역&nbsp;&nbsp;서</div>
+    <div style="overflow-x:auto;">
     <table class="est">
       <thead>
         <tr>
@@ -1489,6 +1497,7 @@ function exportClientHTML() {
       </thead>
       <tbody>${sectionsHTML}</tbody>
     </table>
+    </div>
     <div class="grand">
       <div class="grand-item"><div class="gl">자 재 비</div><div class="gv">${gtM.toLocaleString('ko-KR')}</div></div>
       <div class="grand-item"><div class="gl">노 무 비</div><div class="gv">${gtL.toLocaleString('ko-KR')}</div></div>
