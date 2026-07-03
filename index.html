@@ -255,6 +255,51 @@
   }
   table.estimate td .del-btn:hover { color: var(--red); background: #ffe0e0; }
 
+  /* ── 순서 이동 버튼 ── */
+  .row-move-btn {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--ink-light);
+    font-size: 10px;
+    padding: 1px 5px;
+    line-height: 1.4;
+    transition: all 0.15s;
+    display: block;
+    width: 24px;
+  }
+  .row-move-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+  .row-btns-wrap { display: none; }
+  td.move-col { display: none; }
+  .section-row-wrap {
+    position: relative;
+  }
+  .section-row-wrap .row-btns-outer {
+    position: absolute;
+    left: -34px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
+  .row-move-btn {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--ink-light);
+    font-size: 10px;
+    padding: 1px 5px;
+    line-height: 1.4;
+    transition: all 0.15s;
+    display: block;
+    width: 24px;
+  }
+  .row-move-btn:hover { background: var(--accent); color: #1a1a2e; border-color: var(--accent); }
+
   /* ── 단위 헤더 ── */
   th.unit-th { padding: 0 !important; vertical-align: top !important; min-width: 110px; }
   .unit-th-inner { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 4px; }
@@ -873,6 +918,12 @@
           <button class="toolbar-pill" onclick="applyGlobal('unit','₩')">₩</button>
         </div>
       </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group" style="margin-left:auto;">
+        <button class="toolbar-action-btn" onclick="moveCheckedRows(-1)">▲ 위로</button>
+        <button class="toolbar-action-btn" onclick="moveCheckedRows(1)">▼ 아래로</button>
+        <button class="toolbar-action-btn danger" onclick="deleteCheckedRows()">🗑 삭제</button>
+      </div>
     </div>
     <div id="sections-container"></div>
     <button class="add-section-btn" onclick="addSection()">
@@ -1396,6 +1447,19 @@ function renderSections() {
   calcGrandTotal();
 }
 
+function addRowButtons() {
+  document.querySelectorAll('tr.section-row-wrap').forEach(tr => {
+    if (tr.querySelector('.row-btns-outer')) return;
+    const secId = +tr.dataset.sec;
+    const rowId = +tr.dataset.row;
+    const div = document.createElement('div');
+    div.className = 'row-btns-outer no-print';
+    div.innerHTML = `<button class="row-move-btn" onclick="moveRow(${secId},${rowId},-1)">▲</button><button class="row-move-btn" onclick="moveRow(${secId},${rowId},1)">▼</button>`;
+    tr.style.position = 'relative';
+    tr.appendChild(div);
+  });
+}
+
 function buildSectionHTML(sec) {
   let subtotal = calcSubtotal(sec);
   let rows = sec.rows.map((r, i) => buildRowHTML(sec.id, r, i)).join('');
@@ -1431,7 +1495,7 @@ function buildSectionHTML(sec) {
           <th colspan="2" class="group">노 무 비</th>
           <th colspan="2" class="group">경 비</th>
           <th colspan="2" class="group">합 계 금 액</th>
-          <th rowspan="2" class="no-print">삭제</th>
+          <th rowspan="2" class="no-print" style="width:28px;"><input type="checkbox" id="check-all-${sec.id}" onchange="toggleAllChecks(${sec.id},this.checked)" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;"></th>
         </tr>
         <tr>
           <th>단가</th><th>금액</th>
@@ -1451,6 +1515,7 @@ function buildSectionHTML(sec) {
           <td></td><td class="num">${fmt(subtotal.exp)}</td>
           <td></td><td class="num">${fmt(subtotal.total)}</td>
           <td class="no-print"></td>
+
         </tr>
       </tfoot>
     </table>
@@ -1467,7 +1532,7 @@ function buildRowHTML(secId, r, idx) {
   const totAmt = matAmt + labAmt + expAmt;
   const totUnit = (r.mat||0) + (r.lab||0) + (r.exp||0);
 
-  return `<tr>
+  return `<tr data-sec="${secId}" data-row="${r.id}">
     <td><input type="text" value="${esc(r.품명)}" placeholder="품명" oninput="updateRow(${secId},${r.id},'품명',this.value)"></td>
     <td class="unit-cell">
       <input class="unit-input" type="text" value="${esc(r.규격)}" placeholder="규격"
@@ -1490,7 +1555,7 @@ function buildRowHTML(secId, r, idx) {
     <td class="calc">${fmt(expAmt)}</td>
     <td class="calc">${fmt(totUnit)}</td>
     <td class="calc">${fmt(totAmt)}</td>
-    <td class="del-col no-print"><button class="del-btn" onclick="removeRow(${secId},${r.id})">✕</button></td>
+    <td class="check-col no-print"><input type="checkbox" class="row-check" data-sec="${secId}" data-row="${r.id}"></td>
   </tr>`;
 }
 
@@ -1609,6 +1674,76 @@ function highlightActivePill(secId, val) {
   pillsEl.querySelectorAll('.unit-pill').forEach(p => {
     p.classList.toggle('active', p.textContent === val);
   });
+}
+
+function toggleAllChecks(secId, checked) {
+  document.querySelectorAll(`.row-check[data-sec="${secId}"]`).forEach(cb => cb.checked = checked);
+}
+
+function getCheckedRows() {
+  const checked = [];
+  document.querySelectorAll('.row-check:checked').forEach(cb => {
+    checked.push({ secId: +cb.dataset.sec, rowId: +cb.dataset.row });
+  });
+  return checked;
+}
+
+function moveCheckedRows(dir) {
+  const checked = getCheckedRows();
+  if (!checked.length) return;
+  // 섹션별로 그룹화
+  const bySection = {};
+  checked.forEach(({secId, rowId}) => {
+    if (!bySection[secId]) bySection[secId] = [];
+    bySection[secId].push(rowId);
+  });
+  Object.entries(bySection).forEach(([secId, rowIds]) => {
+    const sec = sections.find(s => s.id === +secId);
+    if (!sec) return;
+    const indices = rowIds.map(rid => sec.rows.findIndex(r => r.id === rid)).sort((a,b) => dir>0?b-a:a-b);
+    indices.forEach(idx => {
+      const newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= sec.rows.length) return;
+      const tmp = sec.rows[idx];
+      sec.rows[idx] = sec.rows[newIdx];
+      sec.rows[newIdx] = tmp;
+    });
+  });
+  renderSections();
+  triggerAutoSave();
+  // 체크 복원
+  setTimeout(() => {
+    checked.forEach(({secId, rowId}) => {
+      const cb = document.querySelector(`.row-check[data-sec="${secId}"][data-row="${rowId}"]`);
+      if (cb) cb.checked = true;
+    });
+  }, 50);
+}
+
+function deleteCheckedRows() {
+  const checked = getCheckedRows();
+  if (!checked.length) return;
+  if (!confirm(`${checked.length}개 항목을 삭제할까요?`)) return;
+  checked.forEach(({secId, rowId}) => {
+    const sec = sections.find(s => s.id === secId);
+    if (sec) sec.rows = sec.rows.filter(r => r.id !== rowId);
+  });
+  renderSections();
+  triggerAutoSave();
+}
+
+function moveRow(secId, rowId, dir) {
+  const sec = sections.find(s => s.id === secId);
+  if (!sec) return;
+  const idx = sec.rows.findIndex(r => r.id === rowId);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= sec.rows.length) return;
+  // 스왑
+  const tmp = sec.rows[idx];
+  sec.rows[idx] = sec.rows[newIdx];
+  sec.rows[newIdx] = tmp;
+  renderSections();
+  triggerAutoSave();
 }
 
 function updateSectionName(id, name) {
