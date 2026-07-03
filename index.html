@@ -18,10 +18,10 @@
     --red: #ef4444;
     --blue: #1a1a2e;
     --border: #d4d4d4;
-    --section-bg: #1a1a2e;
-    --section-text: #ffffff;
+    --section-bg: #f5f0e8;
+    --section-text: #2d2d2d;
     --subtotal-bg: #fff8e6;
-    --total-bg: #1a1a2e;
+    --total-bg: #f5f0e8;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -171,7 +171,7 @@
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(255,255,255,0.3);
-    color: var(--section-text);
+    color: #2d2d2d;
     font-size: 14px;
     font-weight: 700;
     font-family: 'Noto Serif KR', serif;
@@ -188,7 +188,7 @@
   /* 컬럼 너비 고정 */
   table.estimate col.col-name  { width: 140px; }
   table.estimate col.col-spec  { width: 120px; }
-  table.estimate col.col-unit  { width: 130px; }
+  table.estimate col.col-unit  { width: 80px; }
   table.estimate col.col-qty   { width: 60px; }
   table.estimate col.col-price { width: 80px; }
   table.estimate col.col-amt   { width: 80px; }
@@ -237,11 +237,11 @@
   table.estimate tr.subtotal td.label { text-align: right; letter-spacing: 1px; }
   table.estimate tr.total-row td {
     background: var(--total-bg);
-    color: var(--section-text);
+    color: #2d2d2d;
     font-weight: 700;
     font-size: 13px;
   }
-  table.estimate tr.total-row td.label { text-align: right; letter-spacing: 2px; color: var(--accent); }
+  table.estimate tr.total-row td.label { text-align: right; letter-spacing: 2px; color: #1a1a2e; }
   table.estimate td.del-col { width: 30px; text-align: center; }
   table.estimate td .del-btn {
     background: none;
@@ -318,12 +318,12 @@
     margin-top: 16px;
     box-shadow: 0 4px 16px rgba(30,64,175,0.2);
   }
-  .grand-total-box .gt-title { color: #f8be40; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; letter-spacing: 2px; margin-bottom: 16px; font-weight: 700; }
+  .grand-total-box .gt-title { color: #1a1a2e; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; letter-spacing: 2px; margin-bottom: 16px; font-weight: 700; }
   .grand-total-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .gt-item { text-align: center; }
   .gt-item .gt-label { font-size: 10px; color: #888; letter-spacing: 1px; margin-bottom: 4px; }
-  .gt-item .gt-value { font-size: 18px; font-weight: 700; color: white; }
-  .gt-item.accent .gt-value { color: #f8be40; font-size: 22px; }
+  .gt-item .gt-value { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+  .gt-item.accent .gt-value { color: #1a1a2e; font-size: 22px; }
   .gt-item .gt-label { font-size: 10px; color: #aab4c8; letter-spacing: 1px; margin-bottom: 4px; }
 
   /* ── 특기사항 ── */
@@ -410,7 +410,13 @@
     table.estimate col.col-amt   { width: 8% !important; }
     table.estimate col.col-del   { display: none !important; }
 
-    /* no-print 요소 완전 숨김 */
+    /* 내역서 총합계 페이지 넘김 방지 */
+    .grand-total-box { page-break-inside: avoid !important; break-inside: avoid !important; }
+    .grand-total-box * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    #tab-cost .card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    #tab-cost table { font-size: 9px !important; width: 100% !important; }
+    #tab-cost table td, #tab-cost table th { padding: 3px 5px !important; }
+    #tab-cost .card-title { font-size: 12px !important; margin-bottom: 8px !important; }
     .no-print, .add-section-btn, .section-actions,
     .input-toolbar, .btn-danger { display: none !important; }
     #cover-preview-box {
@@ -1396,7 +1402,7 @@ function buildSectionHTML(sec) {
 
   return `
   <div class="section-header">
-    <span style="color:var(--accent);font-size:13px;font-weight:700;min-width:24px">${sections.indexOf(sec)+1}</span>
+    <span style="color:#2d2d2d;font-size:13px;font-weight:700;min-width:24px">${sections.indexOf(sec)+1}</span>
     <input type="text" value="${esc(sec.name)}" placeholder="섹션 이름 (예: 철거공사, A동 공사...)"
       onchange="updateSectionName(${sec.id}, this.value)">
     <div style="flex:1"></div>
