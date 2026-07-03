@@ -568,8 +568,8 @@
     font-weight: 700;
   }
   .cv-kor-amount { flex: 1; text-align: center; font-weight: 700; }
-  .cv-num-amount { font-weight: 700; color: var(--ink); margin-left: 16px; white-space: nowrap; }
-  .cv-won { font-size: 13px; margin-left: 6px; }
+  .cv-num-amount { font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .cv-won { font-size: 13px; margin-right: 2px; }
   .cv-amount-cell { display: flex; align-items: center; }
   /* 안내문구 */
   .cv-notes {
@@ -823,8 +823,7 @@
           <td class="cv-val amount" colspan="3">
             <div class="cv-amount-cell">
               <span class="cv-kor-amount" id="prev-amount-kor">일금 영원정</span>
-              <span class="cv-won">₩</span>
-              <span class="cv-num-amount" id="prev-amount-num">-</span>
+              <span style="display:flex;align-items:center;gap:2px;white-space:nowrap;"><span class="cv-won">₩</span><span class="cv-num-amount" id="prev-amount-num">-</span></span>
             </div>
           </td>
         </tr>
@@ -1023,6 +1022,15 @@ let sections = [];   // [{id, name, rows:[{품명,규격,단위,수량,mat단가
 let notes = [];      // [string]
 let sectionCounter = 0;
 let rowCounter = 0;
+
+// 자동저장: 입력 있을 때마다 호출되지만 실제 저장은 debounce로 묶어서 처리
+let autoSaveTimer = null;
+function triggerAutoSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    try { saveEstimate(true); } catch(e) { console.error('자동저장 오류:', e); }
+  }, 1000);
+}
 
 // ══════════════════════════════════════════
 // TABS
@@ -1399,8 +1407,22 @@ function switchTab(name) {
 // ══════════════════════════════════════════
 // SECTIONS
 // ══════════════════════════════════════════
+function nextSectionId() {
+  let maxId = 0;
+  sections.forEach(s => { if (s.id > maxId) maxId = s.id; });
+  sectionCounter = Math.max(sectionCounter || 0, maxId) + 1;
+  return sectionCounter;
+}
+
+function nextRowId() {
+  let maxId = 0;
+  sections.forEach(s => s.rows.forEach(r => { if (r.id > maxId) maxId = r.id; }));
+  rowCounter = Math.max(rowCounter || 0, maxId) + 1;
+  return rowCounter;
+}
+
 function addSection(name='') {
-  const id = ++sectionCounter;
+  const id = nextSectionId();
   sections.push({ id, name, rows: [] });
   renderSections();
   if (!name) addRow(id);
@@ -1416,7 +1438,7 @@ function removeSection(id) {
 function addRow(sectionId) {
   const sec = sections.find(s => s.id === sectionId);
   if (!sec) return;
-  sec.rows.push({ id: ++rowCounter, 품명:'', 규격:'', 단위:'', 수량:0, mat:0, lab:0, exp:0 });
+  sec.rows.push({ id: nextRowId(), 품명:'', 규격:'', 단위:'', 수량:0, mat:0, lab:0, exp:0 });
   renderSections();
 }
 
@@ -1501,7 +1523,7 @@ function buildSectionHTML(sec) {
       </tbody>
       <tfoot>
         <tr class="subtotal">
-          <td colspan="4" class="label">소   계</td>
+          <td colspan="4" class="label" style="text-align:left; padding-left:10px;">소   계</td>
           <td></td><td class="num">${fmt(subtotal.mat)}</td>
           <td></td><td class="num">${fmt(subtotal.lab)}</td>
           <td></td><td class="num">${fmt(subtotal.exp)}</td>
@@ -1510,7 +1532,7 @@ function buildSectionHTML(sec) {
         </tr>
       ${sections.indexOf(sec) === sections.length-1 ? `
       <tr id="grand-total-tr" style="background:var(--section-bg);">
-        <td colspan="4" style="padding:8px 10px; text-align:right; font-weight:700; color:#2d2d2d; border:1px solid rgba(0,0,0,0.1); letter-spacing:2px;">총 &nbsp; 합 &nbsp; 계</td>
+        <td colspan="4" style="padding:8px 10px; text-align:left; font-weight:700; color:#2d2d2d; border:1px solid rgba(0,0,0,0.1); letter-spacing:2px;">총 &nbsp; 합 &nbsp; 계</td>
         <td style="border:1px solid rgba(0,0,0,0.1);"></td>
         <td class="num" style="font-weight:700;color:#2d2d2d;border:1px solid rgba(0,0,0,0.1);" id="gt-material">0</td>
         <td style="border:1px solid rgba(0,0,0,0.1);"></td>
@@ -1619,13 +1641,19 @@ function applySpec(event, secId, spec) {
 }
 
 // 천단위 콤마 헬퍼
-function parseNum(v) { return +(String(v).replace(/,/g,'')); }
-function fmtInput(n) { if (!n || n === 0) return ''; return Math.round(n).toLocaleString('ko-KR'); }
+function parseNum(v) { 
+  if (v === null || v === undefined || v === '') return 0;
+  const n = +(String(v).replace(/,/g,'').trim());
+  return isNaN(n) ? 0 : n;
+}
+function fmtInput(n) { 
+  const num = parseNum(n);
+  if (!num) return ''; 
+  return Math.round(num).toLocaleString('ko-KR'); 
+}
 function formatInputComma(el) {
-  const pos = el.selectionStart;
   const raw = el.value.replace(/[^0-9]/g,'');
-  const formatted = raw ? (+raw).toLocaleString('ko-KR') : '';
-  el.value = formatted;
+  el.value = raw ? (+raw).toLocaleString('ko-KR') : '';
 }
 
 function focusUnitInput(el) {
@@ -1760,29 +1788,50 @@ function updateRow(secId, rowId, field, val) {
   if (!sec) return;
   const row = sec.rows.find(r => r.id === rowId);
   if (!row) return;
-  row[field] = val;
+  row[field] = (field === '수량' || field === 'mat' || field === 'lab' || field === 'exp') ? parseNum(val) : val;
   triggerAutoSave();
-  // 계산 셀만 업데이트
-  const tbody = document.getElementById('tbody-' + secId);
-  if (!tbody) { renderSections(); return; }
-  const trs = tbody.querySelectorAll('tr');
-  const rowIdx = sec.rows.findIndex(r => r.id === rowId);
-  if (rowIdx < 0 || rowIdx >= trs.length) { renderSections(); return; }
-  const tr = trs[rowIdx];
-  const tds = tr.querySelectorAll('td');
+
   const matAmt = (row.수량||0) * (row.mat||0);
   const labAmt = (row.수량||0) * (row.lab||0);
   const expAmt = (row.수량||0) * (row.exp||0);
   const totAmt = matAmt + labAmt + expAmt;
   const totUnit = (row.mat||0) + (row.lab||0) + (row.exp||0);
-  tds[5].textContent  = fmt(matAmt);
-  tds[7].textContent  = fmt(labAmt);
-  tds[9].textContent  = fmt(expAmt);
-  tds[10].textContent = fmt(totUnit);
-  tds[11].textContent = fmt(totAmt);
-  // subtotal 갱신
+
+  // 해당 행의 calc td만 직접 업데이트
+  const tbody = document.getElementById('tbody-' + secId);
+  if (tbody) {
+    const trs = tbody.querySelectorAll('tr');
+    const rowIdx = sec.rows.findIndex(r => r.id === rowId);
+    if (rowIdx >= 0 && rowIdx < trs.length) {
+      const tr = trs[rowIdx];
+      const calcTds = tr.querySelectorAll('td.calc');
+      if (calcTds[0]) calcTds[0].textContent = fmt(matAmt);
+      if (calcTds[1]) calcTds[1].textContent = fmt(labAmt);
+      if (calcTds[2]) calcTds[2].textContent = fmt(expAmt);
+      if (calcTds[3]) calcTds[3].textContent = fmt(totUnit);
+      if (calcTds[4]) calcTds[4].textContent = fmt(totAmt);
+    }
+  }
+
+  // 소계 업데이트
   updateSubtotalRow(secId);
-  calcGrandTotal();
+
+  // 총합계 업데이트
+  let gMat=0, gLab=0, gExp=0;
+  sections.forEach(s => { const st=calcSubtotal(s); gMat+=st.mat; gLab+=st.lab; gExp+=st.exp; });
+  const gTotal = gMat+gLab+gExp;
+  const gtM = document.getElementById('gt-material');
+  const gtL = document.getElementById('gt-labor');
+  const gtE = document.getElementById('gt-expense');
+  const gtT = document.getElementById('gt-total');
+  if (gtM) gtM.textContent = fmt(gMat);
+  if (gtL) gtL.textContent = fmt(gLab);
+  if (gtE) gtE.textContent = fmt(gExp);
+  if (gtT) gtT.innerHTML = fmt(gTotal) + '<div style="font-size:10px;color:#888;font-weight:400;">(VAT별도)</div>';
+  const korEl = document.getElementById('prev-amount-kor');
+  const numEl = document.getElementById('prev-amount-num');
+  if (korEl) korEl.textContent = numToKor(gTotal);
+  if (numEl) numEl.textContent = gTotal ? fmt(gTotal) : '-';
 }
 
 function updateSubtotalRow(secId) {
@@ -2036,11 +2085,23 @@ function loadEstimate(id) {
   set('ci-note2', data.cover.note2);
   set('ci-note3', data.cover.note3);
 
-  // 내역서 복원
-  sections = data.sections || [];
+  // 내역서 복원 - 수치 타입 강제 변환
+  sections = (data.sections || []).map(sec => ({
+    ...sec,
+    rows: (sec.rows || []).map(r => ({
+      ...r,
+      수량: parseNum(r.수량),
+      mat: parseNum(r.mat),
+      lab: parseNum(r.lab),
+      exp: parseNum(r.exp),
+    }))
+  }));
   notes = data.notes || [];
   sectionCounter = data.sectionCounter || sections.length;
   rowCounter = data.rowCounter || 0;
+  // 저장된 카운터가 실제 최대 id보다 낮으면(구버전 데이터 등) 여기서 보정 -> id 중복 방지
+  nextSectionId(); sectionCounter -= 1;
+  nextRowId(); rowCounter -= 1;
 
   renderSections();
   renderNotes();
