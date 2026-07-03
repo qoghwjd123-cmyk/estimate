@@ -509,7 +509,7 @@
 
     /* 섹션 헤더 */
     .section-header { border-radius: 0 !important; }
-    .section-header input { color: white !important; background: transparent !important; border: none !important; }
+    .section-header input { color: #2d2d2d !important; background: transparent !important; border: none !important; }
 
     /* 소계/합계 배경색 유지 */
     tr.subtotal td, tr.total-row td { -webkit-print-color-adjust: exact; }
@@ -658,6 +658,11 @@
   .cv-editable:hover { border-bottom-color: var(--accent); }
   .cv-editable:focus { border-bottom-color: var(--ink); background: #fffbf0; border-radius: 2px; }
   .cv-editable:empty:before { content: attr(data-ph); color: #bbb; font-style: italic; }
+
+  /* 인쇄 시 특기사항 빈 줄(입력 안 한 항목)은 통째로 숨김 */
+  @media print {
+    .note-line:has(.cv-editable:empty) { display: none; }
+  }
   input.cv-date-input {
     border: none;
     border-bottom: 1.5px dashed transparent;
@@ -842,10 +847,10 @@
       <div class="cv-notes">
         ◆ 부가세 별도<br>
         ◆ 다음과 같이 견적 합니다.<br>
-        ◆ 내역에 없는 부분은 정산처리 입니다.<br>
-          ◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note1" oninput="triggerAutoSave()"></span><br>
-          ◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note2" oninput="triggerAutoSave()"></span><br>
-          ◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note3" oninput="triggerAutoSave()"></span>
+        ◆ 내역에 없는 부분은 정산처리 입니다.
+          <div class="note-line">◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note1" oninput="triggerAutoSave()"></span></div>
+          <div class="note-line">◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note2" oninput="triggerAutoSave()"></span></div>
+          <div class="note-line">◆ <span class="cv-editable" contenteditable="true" data-ph="추가 내용 입력..." id="ci-note3" oninput="triggerAutoSave()"></span></div>
       </div>
       <div class="cv-company-wrap">
         <table class="cv-company-table">
