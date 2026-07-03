@@ -1528,6 +1528,7 @@ function exportClientHTML() {
 function printAll() {
   // 표지 → 내역서 → 특기사항 → 공사원가계산서 순서로 전체 출력
   document.querySelectorAll('.panel').forEach(p => p.classList.add('active'));
+  calcCostSheet(); // 원가계산서 탭을 안 들어갔어도 인쇄 전에 표를 채워둠
   window.print();
   // 인쇄 후 원래대로 복원
   setTimeout(() => {
