@@ -432,9 +432,10 @@
 
     @page { margin: 10mm; size: A4 landscape; }
 
-    /* 전체 인쇄 시 페이지 구분 - 마지막 패널 제외 */
+    /* 전체 인쇄 시 페이지 구분: 표지 → 내역서 → 특기사항 → 원가계산서 */
     #tab-cover.active { page-break-after: always; }
     #tab-estimate.active { page-break-after: always; }
+    #tab-notes.active { page-break-after: always; }
 
     /* 내역서 테이블 짤림 방지 */
     #tab-estimate { overflow: visible !important; }
@@ -784,39 +785,6 @@
 <div class="main">
 
 
-  <!-- ══ 공사원가계산서 탭 ══ -->
-  <div class="panel" id="tab-cost">
-    <div class="card">
-      <div class="card-title">공 사 원 가 계 산 서</div>
-
-      <!-- 공사명 표시 -->
-      <div style="margin-bottom:16px; font-size:13px; color:var(--ink-light);">
-        공사명 : <span id="cost-project-name" style="font-weight:700; color:var(--ink);">—</span>
-      </div>
-
-      <div style="overflow-x:auto"><table id="cost-table" style="width:100%; min-width:800px; border-collapse:collapse; font-size:13px;">
-        <colgroup>
-          <col style="width:60px">
-          <col style="width:100px">
-          <col style="width:160px">
-          <col style="width:140px">
-          <col style="width:120px">
-          <col style="width:180px">
-        </colgroup>
-        <thead>
-          <tr>
-            <th colspan="3" style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; font-size:14px; letter-spacing:4px;">비&nbsp;&nbsp;&nbsp;목</th>
-            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">금&nbsp;&nbsp;액</th>
-            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">구&nbsp;&nbsp;성&nbsp;&nbsp;비</th>
-            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5;">비고</th>
-          </tr>
-        </thead>
-        <tbody id="cost-tbody">
-        </tbody>
-      </table></div>
-    </div>
-  </div>
-
   <!-- ══ 표지 탭 ══ -->
   <div class="panel active" id="tab-cover">
     <div style="max-width:860px;margin:0 auto 16px;font-size:12px;color:#888;text-align:right" class="no-print">
@@ -951,6 +919,39 @@
       <div class="card-title" style="margin-bottom:16px">특  기  사  항</div>
       <div id="notes-list"></div>
       <button class="btn btn-ghost" style="margin-top:12px" onclick="addNote()">＋ 항목 추가</button>
+    </div>
+  </div>
+
+  <!-- ══ 공사원가계산서 탭 ══ -->
+  <div class="panel" id="tab-cost">
+    <div class="card">
+      <div class="card-title">공 사 원 가 계 산 서</div>
+
+      <!-- 공사명 표시 -->
+      <div style="margin-bottom:16px; font-size:13px; color:var(--ink-light);">
+        공사명 : <span id="cost-project-name" style="font-weight:700; color:var(--ink);">—</span>
+      </div>
+
+      <div style="overflow-x:auto"><table id="cost-table" style="width:100%; min-width:800px; border-collapse:collapse; font-size:13px;">
+        <colgroup>
+          <col style="width:60px">
+          <col style="width:100px">
+          <col style="width:160px">
+          <col style="width:140px">
+          <col style="width:120px">
+          <col style="width:180px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="3" style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; font-size:14px; letter-spacing:4px;">비&nbsp;&nbsp;&nbsp;목</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">금&nbsp;&nbsp;액</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5; letter-spacing:2px;">구&nbsp;&nbsp;성&nbsp;&nbsp;비</th>
+            <th style="text-align:center; padding:8px; border:1px solid var(--border); background:#f5f5f5;">비고</th>
+          </tr>
+        </thead>
+        <tbody id="cost-tbody">
+        </tbody>
+      </table></div>
     </div>
   </div>
 
@@ -1410,28 +1411,28 @@ function exportClientHTML() {
 
   /* 내역서 */
   .section-box{background:white;border-radius:4px;overflow:hidden;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
-  .section-title{background:#f5f0e8;color:#2d2d2d;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;letter-spacing:3px;padding:12px 20px;}
+  .section-title{background:#1a1a2e;color:#c8a96e;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;letter-spacing:3px;padding:12px 20px;}
   table.est{width:100%;border-collapse:collapse;font-size:12px;}
   table.est th{background:#f0ece0;font-weight:700;font-size:11px;padding:7px 6px;border:1px solid #ccc;text-align:center;white-space:nowrap;} table.est{width:100%;table-layout:fixed;} table.est td:nth-child(1), table.est th:nth-child(1){width:13%;word-break:keep-all;} table.est td:nth-child(2){width:14%;word-break:break-all;} table.est td:nth-child(3){width:5%;} table.est td:nth-child(4){width:5%;} table.est td:nth-child(5), table.est td:nth-child(6), table.est td:nth-child(7), table.est td:nth-child(8), table.est td:nth-child(9), table.est td:nth-child(10), table.est td:nth-child(11), table.est td:nth-child(12){width:8%;white-space:nowrap;font-size:11px;}
   table.est th.grp{background:#e0dcd0;font-size:10px;color:#666;}
   table.est td{border:1px solid #ddd;padding:5px 6px;}
   table.est td.num{text-align:right;}
-  table.est td.cal{background:#fff8e6;color:#1a1a2e;font-weight:500;text-align:right;}
-  table.est tr.sec-head td{background:#f5f0e8;color:#2d2d2d;font-weight:700;font-size:12px;padding:8px 10px;}
-  table.est tr.subtotal td{background:#fff8e6;font-weight:700;font-size:12px;}
-  .grand{background:#f5f0e8;color:#2d2d2d;padding:14px 20px;display:flex;justify-content:flex-end;gap:40px;font-size:14px;font-weight:700;}
+  table.est td.cal{background:#f5f3ee;color:#1a4a8a;font-weight:500;text-align:right;}
+  table.est tr.sec-head td{background:#1a1a2e;color:#c8a96e;font-weight:700;font-size:12px;padding:8px 10px;}
+  table.est tr.subtotal td{background:#e8e4dc;font-weight:700;font-size:12px;}
+  .grand{background:#1a1a2e;color:white;padding:14px 20px;display:flex;justify-content:flex-end;gap:40px;font-size:14px;font-weight:700;}
   .grand-item{text-align:center;}
   .grand-item .gl{font-size:10px;color:#888;margin-bottom:4px;letter-spacing:1px;}
   .grand-item .gv{font-size:16px;}
-  .grand-item.accent .gv{color:#e0a020;font-size:20px;}
+  .grand-item.accent .gv{color:#c8a96e;font-size:20px;}
 
   /* 워터마크 */
   .watermark{text-align:center;margin-top:32px;font-size:11px;color:#bbb;letter-spacing:2px;}
   /* 고정 네비 */
   .sticky-nav{position:sticky;top:0;z-index:100;background:white;border-bottom:2px solid #f8be40;padding:10px 16px;display:flex;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
-  .nav-btn{padding:6px 16px;border-radius:20px;border:1px solid #d4d4d4;background:white;color:#2d2d2d;font-size:12px;font-weight:600;cursor:pointer;font-family:"Noto Sans KR",sans-serif;text-decoration:none;transition:all 0.15s;}
-  .nav-btn:hover{background:#fff8e6;border-color:#f8be40;}
-  .nav-btn.active{background:#f8be40;color:#2d2d2d;border-color:#f8be40;}
+  .nav-btn{padding:6px 16px;border-radius:20px;border:1px solid #1a1a2e;background:white;color:#1a1a2e;font-size:12px;font-weight:600;cursor:pointer;font-family:"Noto Sans KR",sans-serif;text-decoration:none;transition:all 0.15s;}
+  .nav-btn:hover{background:#1a1a2e;color:#f8be40;}
+  .nav-btn.active{background:#1a1a2e;color:#f8be40;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
   @media print { .sticky-nav{display:none;} .tab-panel{display:none;} .tab-panel.active{display:block;} }
@@ -1525,10 +1526,8 @@ function exportClientHTML() {
 }
 
 function printAll() {
-  // 공사원가계산서 제외하고 모든 패널 임시로 active 추가
-  document.querySelectorAll('.panel').forEach(p => {
-    if (p.id !== 'tab-cost') p.classList.add('active');
-  });
+  // 표지 → 내역서 → 특기사항 → 공사원가계산서 순서로 전체 출력
+  document.querySelectorAll('.panel').forEach(p => p.classList.add('active'));
   window.print();
   // 인쇄 후 원래대로 복원
   setTimeout(() => {
