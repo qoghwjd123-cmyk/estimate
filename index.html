@@ -1290,6 +1290,27 @@ function closeExportModal() {
   if (modal) modal.style.display = 'none';
 }
 
+// 헬퍼: input/contenteditable 값 읽기 (exportClientHTML에서 사용)
+function v(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.isContentEditable !== undefined && el.tagName !== 'INPUT') return el.textContent.trim();
+  return el.value || '';
+}
+function getCoverVal(field) {
+  const map = {
+    'c-project': 'ci-project', 'c-client': 'ci-client', 'c-company': 'ci-company',
+    'c-biznum': 'ci-biznum', 'c-address': 'ci-address', 'c-email': 'ci-email',
+    'c-tel': 'ci-tel', 'c-fax': 'ci-fax', 'c-biztype': 'ci-biztype', 'c-bizitem': 'ci-bizitem'
+  };
+  return v(map[field] || field);
+}
+function calcAllTotal() {
+  let t=0;
+  sections.forEach(sec => { const st=calcSubtotal(sec); t+=st.total; });
+  return t;
+}
+
 function exportClientHTML() {
   // 모달 닫기 전에 체크박스 값 읽기
   inclCover    = document.getElementById('exp-check-cover')?.checked !== false;
