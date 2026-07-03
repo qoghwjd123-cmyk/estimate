@@ -226,6 +226,7 @@
   table.estimate td.num { text-align: right; }
   table.estimate td.num input { text-align: right; }
   table.estimate td.calc { background: #fff8e6; text-align: right; color: #1a1a2e; }
+  table.estimate td.calc-plain { background: #fff; font-weight: 400; }
   table.estimate tr:hover td { background: #fffbf0; }
   table.estimate tr.subtotal td {
     background: #fff8e6;
@@ -1129,7 +1130,7 @@ function buildCostHTML() {
     ['이&nbsp;&nbsp;&nbsp;&nbsp;윤',f(profit),'(노무비+경비+일반관리비)*3%','#fff',false],
     ['공 급 가 액',f(supplyAmt),'','#fff8e6',false],
     ['부 가 가 세',f(vat),'부가가치세 10%','#fff',false],
-    ['도 급 액',f(contractAmt),'','#1a1a2e',true],
+    ['도 급 액',f(contractAmt),'','#333347',true],
   ];
   bottom.forEach(([mid,amt,note,bg,dark]) => {
     h += '<tr>';
@@ -1357,8 +1358,7 @@ function exportClientHTML() {
     const sT=sM+sL+sE; gtM+=sM; gtL+=sL; gtE+=sE;
     sectionsHTML += `
     <tr class="sec-head">
-      <td style="text-align:center;width:32px">${si+1}</td>
-      <td colspan="11">${sec.name||''}</td>
+      <td colspan="12">${si+1}. ${sec.name||''}</td>
     </tr>
     ${rowsHTML}
     <tr class="subtotal">
@@ -1411,16 +1411,16 @@ function exportClientHTML() {
 
   /* 내역서 */
   .section-box{background:white;border-radius:4px;overflow:hidden;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
-  .section-title{background:#1a1a2e;color:#c8a96e;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;letter-spacing:3px;padding:12px 20px;}
+  .section-title{background:#333347;color:#c8a96e;font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;letter-spacing:3px;padding:12px 20px;}
   table.est{width:100%;border-collapse:collapse;font-size:12px;}
   table.est th{background:#f0ece0;font-weight:700;font-size:11px;padding:7px 6px;border:1px solid #ccc;text-align:center;white-space:nowrap;} table.est{width:100%;table-layout:fixed;} table.est td:nth-child(1), table.est th:nth-child(1){width:13%;word-break:keep-all;} table.est td:nth-child(2){width:14%;word-break:break-all;} table.est td:nth-child(3){width:5%;} table.est td:nth-child(4){width:5%;} table.est td:nth-child(5), table.est td:nth-child(6), table.est td:nth-child(7), table.est td:nth-child(8), table.est td:nth-child(9), table.est td:nth-child(10), table.est td:nth-child(11), table.est td:nth-child(12){width:8%;white-space:nowrap;font-size:11px;}
   table.est th.grp{background:#e0dcd0;font-size:10px;color:#666;}
   table.est td{border:1px solid #ddd;padding:5px 6px;}
   table.est td.num{text-align:right;}
   table.est td.cal{background:#f5f3ee;color:#1a4a8a;font-weight:500;text-align:right;}
-  table.est tr.sec-head td{background:#1a1a2e;color:#c8a96e;font-weight:700;font-size:12px;padding:8px 10px;}
+  table.est tr.sec-head td{background:#333347;color:#c8a96e;font-weight:700;font-size:12px;padding:8px 10px;}
   table.est tr.subtotal td{background:#e8e4dc;font-weight:700;font-size:12px;}
-  .grand{background:#1a1a2e;color:white;padding:14px 20px;display:flex;justify-content:flex-end;gap:40px;font-size:14px;font-weight:700;}
+  .grand{background:#333347;color:white;padding:14px 20px;display:flex;justify-content:flex-end;gap:40px;font-size:14px;font-weight:700;}
   .grand-item{text-align:center;}
   .grand-item .gl{font-size:10px;color:#888;margin-bottom:4px;letter-spacing:1px;}
   .grand-item .gv{font-size:16px;}
@@ -1431,8 +1431,8 @@ function exportClientHTML() {
   /* 고정 네비 */
   .sticky-nav{position:sticky;top:0;z-index:100;background:white;border-bottom:2px solid #f8be40;padding:10px 16px;display:flex;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
   .nav-btn{padding:6px 16px;border-radius:20px;border:1px solid #1a1a2e;background:white;color:#1a1a2e;font-size:12px;font-weight:600;cursor:pointer;font-family:"Noto Sans KR",sans-serif;text-decoration:none;transition:all 0.15s;}
-  .nav-btn:hover{background:#1a1a2e;color:#f8be40;}
-  .nav-btn.active{background:#1a1a2e;color:#f8be40;}
+  .nav-btn:hover{background:#333347;color:#f8be40;}
+  .nav-btn.active{background:#333347;color:#f8be40;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
   @media print { .sticky-nav{display:none;} .tab-panel{display:none;} .tab-panel.active{display:block;} }
@@ -1747,7 +1747,7 @@ function buildRowHTML(secId, r, idx) {
     <td class="calc">${fmt(labAmt)}</td>
     <td class="num"><input type="text" inputmode="numeric" value="${fmtInput(r.exp)}" placeholder="0" oninput="updateRow(${secId},${r.id},'exp',parseNum(this.value)); formatInputComma(this)"></td>
     <td class="calc">${fmt(expAmt)}</td>
-    <td class="calc">${fmt(totUnit)}</td>
+    <td class="calc calc-plain">${fmt(totUnit)}</td>
     <td class="calc">${fmt(totAmt)}</td>
     <td class="check-col no-print"><input type="checkbox" class="row-check" data-sec="${secId}" data-row="${r.id}"></td>
   </tr>`;
