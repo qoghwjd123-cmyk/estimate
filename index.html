@@ -438,7 +438,8 @@
     #tab-estimate.active { page-break-after: always; }
     #tab-notes.active { page-break-after: always; }
 
-    /* 내역서 테이블 짤림 방지 */
+    /* 표지 인쇄 시 테두리가 페이지 중간에서 끊기지 않고 끝까지 채워지도록 */
+    #cover-preview-box { min-height: 178mm; }
     #tab-estimate { overflow: visible !important; }
     #tab-estimate .table-wrap { overflow: visible !important; }
     table.estimate { 
