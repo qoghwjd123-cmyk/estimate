@@ -1447,7 +1447,14 @@ function exportClientHTML() {
   .nav-btn.active{background:#333347;color:#f8be40;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
-  @media print { .sticky-nav{display:none;} .tab-panel{display:none;} .tab-panel.active{display:block;} }
+  @media print {
+    .sticky-nav{display:none;}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+    #cover.active{page-break-after:always;}
+    #estimate.active{page-break-after:always;}
+    #notes.active{page-break-after:always;}
+  }
 </style>
 </head>
 <body>
@@ -1456,6 +1463,7 @@ function exportClientHTML() {
   ${inclEstimate ? '<button class="nav-btn" onclick="switchClientTab(\'estimate\',this)">📐 내역서</button>' : ''}
   ${inclCost ? '<button class="nav-btn" onclick="switchClientTab(\'cost\',this)">📊 원가계산서</button>' : ''}
   ${inclNotes ? '<button class="nav-btn" onclick="switchClientTab(\'notes\',this)">📝 특기사항</button>' : ''}
+  <button class="nav-btn" style="margin-left:auto;border-color:#f8be40;font-weight:700;" onclick="printAllClient()">🖨️ 전체 인쇄 / PDF 저장</button>
 </div>
 <div class="wrap">
   <div class="tab-panel active" id="cover">
@@ -1521,6 +1529,19 @@ function exportClientHTML() {
     const panel = document.getElementById(id);
     if (panel) panel.classList.add('active');
     if (btn) btn.classList.add('active');
+  }
+  function printAllClient() {
+    // 인쇄/PDF 저장 시 모든 섹션(표지/내역서/원가계산서/특기사항)이 다 나오도록 임시로 전부 활성화
+    const prevActivePanel = document.querySelector('.tab-panel.active');
+    const prevActiveBtn = document.querySelector('.nav-btn.active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('active'));
+    window.print();
+    setTimeout(() => {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      if (prevActivePanel) prevActivePanel.classList.add('active');
+      else { const first = document.querySelector('.tab-panel'); if (first) first.classList.add('active'); }
+      if (prevActiveBtn) prevActiveBtn.classList.add('active');
+    }, 500);
   }
   </scr` + `ipt>
   <div class="watermark">㈜ 아인산업개발 · ${company} · ${tel}</div>
