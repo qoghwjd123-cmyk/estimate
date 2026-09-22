@@ -170,7 +170,7 @@
   .section-header input {
     background: transparent;
     border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
+    border-bottom: 1px solid rgba(45,45,45,0.25);
     color: #2d2d2d;
     font-size: 14px;
     font-weight: 700;
@@ -179,7 +179,7 @@
     padding: 2px 4px;
   }
   .section-header input:focus { outline: none; border-bottom-color: var(--accent); }
-  .section-header input::placeholder { color: rgba(255,255,255,0.4); }
+  .section-header input::placeholder { color: rgba(45,45,45,0.4); }
 
   .table-wrap { overflow-x: auto; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 4px; }
 
@@ -1451,9 +1451,7 @@ function exportClientHTML() {
     .sticky-nav{display:none;}
     .tab-panel{display:none;}
     .tab-panel.active{display:block;}
-    #cover.active{page-break-after:always;}
-    #estimate.active{page-break-after:always;}
-    #notes.active{page-break-after:always;}
+    .tab-panel.active:not(:last-of-type){page-break-after:always;}
   }
 </style>
 </head>
