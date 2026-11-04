@@ -2261,6 +2261,7 @@ function saveEstimate(silent=false) {
     id: currentEstimateId || Date.now(),
     title: proj,
     savedAt: new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    savedAtMs: Date.now(),
     cover: {
       project: document.getElementById('ci-project')?.textContent||'',
       client:  document.getElementById('ci-client')?.textContent||'',
@@ -2324,6 +2325,7 @@ function moveSectionsToNewEstimate() {
     id: Date.now(),
     title: newTitle,
     savedAt: new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    savedAtMs: Date.now(),
     cover: {
       project: newTitle,
       client:  document.getElementById('ci-client')?.textContent||'',
@@ -2492,9 +2494,35 @@ async function renderEstimateList() {
     }
   }
 
-  const list = getEstimates();
+  let list = getEstimates();
   if (!list.length) {
     el.innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:13px;">저장된 견적서가 없어요.<br>새 견적서를 작성해보세요!</div>';
+    return;
+  }
+
+  // 각 견적서의 정렬 기준 시각(ms). 예전 데이터(savedAtMs 없음)는 id가 생성 시각(ms)이므로 그걸로 대체
+  const tsOf = e => e.savedAtMs || e.id || 0;
+  const monthOf = e => { const d = new Date(tsOf(e)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+
+  // 월 필터 옵션 채우기 (데이터에 있는 월만, 최신월 먼저)
+  const filterSel = document.getElementById('filter-month');
+  if (filterSel) {
+    const months = [...new Set(list.map(monthOf))].sort().reverse();
+    const prevVal = filterSel.value;
+    filterSel.innerHTML = '<option value="">전체 월</option>' +
+      months.map(m => `<option value="${m}">${m.replace('-', '년 ')}월</option>`).join('');
+    if (months.includes(prevVal)) filterSel.value = prevVal;
+  }
+  const filterMonth = filterSel ? filterSel.value : '';
+  if (filterMonth) list = list.filter(e => monthOf(e) === filterMonth);
+
+  // 최신순/오래된순 정렬
+  const sortSel = document.getElementById('sort-order');
+  const sortOrder = sortSel ? sortSel.value : 'desc';
+  list = [...list].sort((a, b) => sortOrder === 'asc' ? tsOf(a) - tsOf(b) : tsOf(b) - tsOf(a));
+
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:13px;">해당 조건의 견적서가 없어요.</div>';
     return;
   }
   el.innerHTML = list.map(e => `
