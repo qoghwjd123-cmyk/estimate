@@ -662,6 +662,26 @@
   .toolbar-pill.active { background: #1a1a2e; color: #f8be40; border-color: #1a1a2e; font-weight: 700; }
   .toolbar-divider { width: 1px; height: 28px; background: var(--border); }
 
+  .toolbar-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    border: 1px solid #d8d2c4;
+    background: #fff;
+    color: #2d2d2d;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .toolbar-action-btn:hover { background: #fff8e6; border-color: #e0a020; }
+  .toolbar-action-btn.danger { border-color: #e0a0a0; color: #b23b3b; }
+  .toolbar-action-btn.danger:hover { background: #fdeeee; border-color: #c94f4f; }
+
   /* ── 표지 직접편집 ── */
   .cv-editable {
     outline: none;
@@ -907,10 +927,8 @@
       </div>
       <div class="toolbar-divider"></div>
       <div class="toolbar-group" style="margin-left:auto;">
-        <button class="toolbar-action-btn" onclick="moveCheckedRows(-1)">▲ 위로</button>
-        <button class="toolbar-action-btn" onclick="moveCheckedRows(1)">▼ 아래로</button>
-        <select id="moveTargetSelect" class="toolbar-action-btn" style="padding:4px 6px;"></select>
-        <button class="toolbar-action-btn" onclick="moveCheckedRowsToSection()">➡ 섹션 이동</button>
+        <button class="toolbar-action-btn" onclick="moveCheckedRows(-1)" title="맨 위에서 한번 더 누르면 윗 섹션으로 이동">▲ 위로</button>
+        <button class="toolbar-action-btn" onclick="moveCheckedRows(1)" title="맨 아래에서 한번 더 누르면 아랫 섹션으로 이동">▼ 아래로</button>
         <button class="toolbar-action-btn danger" onclick="deleteCheckedRows()">🗑 삭제</button>
       </div>
     </div>
@@ -918,7 +936,7 @@
     <button class="add-section-btn" onclick="addSection()">
       <span style="font-size:18px">＋</span> 새 섹션 추가 (예: A동 공사, 철거공사 등)
     </button>
-    <div class="toolbar-group" style="margin-top:10px;">
+    <div class="toolbar-group no-print" style="margin-top:10px;">
       <button class="toolbar-action-btn" onclick="moveSectionsToNewEstimate()">📄 체크한 섹션 → 새 견적서로 이동</button>
     </div>
 
@@ -1665,16 +1683,7 @@ function renderSections() {
     el.innerHTML = buildSectionHTML(sec);
     container.appendChild(el);
   });
-  populateMoveTargetSelect();
   setTimeout(calcGrandTotal, 0);
-}
-
-function populateMoveTargetSelect() {
-  const sel = document.getElementById('moveTargetSelect');
-  if (!sel) return;
-  const prevVal = sel.value;
-  sel.innerHTML = sections.map((s, i) => `<option value="${s.id}">${i+1}. ${s.name || '(이름없음)'}</option>`).join('');
-  if (prevVal && sections.some(s => String(s.id) === prevVal)) sel.value = prevVal;
 }
 
 function addRowButtons() {
@@ -1937,58 +1946,60 @@ function getCheckedRows() {
   return checked;
 }
 
+// 행 하나를 한 칸 이동. 섹션 맨 끝에 닿으면 인접 섹션으로 넘어감
+// (위로: 맨 위→윗 섹션 맨 아래 / 아래로: 맨 아래→아랫 섹션 맨 위). 더 넘어갈 섹션이 없으면 제자리 유지.
+function stepMoveRow(secId, rowId, dir) {
+  const si = sections.findIndex(s => s.id === secId);
+  if (si === -1) return null;
+  const sec = sections[si];
+  const idx = sec.rows.findIndex(r => r.id === rowId);
+  if (idx === -1) return null;
+  const newIdx = idx + dir;
+  if (newIdx >= 0 && newIdx < sec.rows.length) {
+    const tmp = sec.rows[idx];
+    sec.rows[idx] = sec.rows[newIdx];
+    sec.rows[newIdx] = tmp;
+    return { secId, rowId };
+  }
+  const neighborSec = sections[si + dir];
+  if (!neighborSec) return { secId, rowId };
+  const [row] = sec.rows.splice(idx, 1);
+  if (dir < 0) neighborSec.rows.push(row);
+  else neighborSec.rows.unshift(row);
+  return { secId: neighborSec.id, rowId };
+}
+
 function moveCheckedRows(dir) {
   const checked = getCheckedRows();
   if (!checked.length) return;
-  // 섹션별로 그룹화
-  const bySection = {};
-  checked.forEach(({secId, rowId}) => {
-    if (!bySection[secId]) bySection[secId] = [];
-    bySection[secId].push(rowId);
+  const locate = (secId, rowId) => {
+    const si = sections.findIndex(s => s.id === secId);
+    if (si === -1) return null;
+    const ri = sections[si].rows.findIndex(r => r.id === rowId);
+    if (ri === -1) return null;
+    return { si, ri };
+  };
+  const items = checked.map(c => ({ ...c }));
+  // 섹션+행 순서 기준 정렬: 아래로 이동이면 뒤쪽부터, 위로 이동이면 앞쪽부터 처리
+  items.sort((a, b) => {
+    const la = locate(a.secId, a.rowId), lb = locate(b.secId, b.rowId);
+    if (!la || !lb) return 0;
+    const ka = la.si * 100000 + la.ri, kb = lb.si * 100000 + lb.ri;
+    return dir > 0 ? kb - ka : ka - kb;
   });
-  Object.entries(bySection).forEach(([secId, rowIds]) => {
-    const sec = sections.find(s => s.id === +secId);
-    if (!sec) return;
-    const indices = rowIds.map(rid => sec.rows.findIndex(r => r.id === rid)).sort((a,b) => dir>0?b-a:a-b);
-    indices.forEach(idx => {
-      const newIdx = idx + dir;
-      if (newIdx < 0 || newIdx >= sec.rows.length) return;
-      const tmp = sec.rows[idx];
-      sec.rows[idx] = sec.rows[newIdx];
-      sec.rows[newIdx] = tmp;
-    });
+  items.forEach(item => {
+    const newLoc = stepMoveRow(item.secId, item.rowId, dir);
+    if (newLoc) item.secId = newLoc.secId;
   });
   renderSections();
   triggerAutoSave();
-  // 체크 복원
+  // 체크 복원 (섹션이 바뀐 경우 바뀐 섹션 기준으로)
   setTimeout(() => {
-    checked.forEach(({secId, rowId}) => {
+    items.forEach(({ secId, rowId }) => {
       const cb = document.querySelector(`.row-check[data-sec="${secId}"][data-row="${rowId}"]`);
       if (cb) cb.checked = true;
     });
   }, 50);
-}
-
-function moveCheckedRowsToSection() {
-  const checked = getCheckedRows();
-  if (!checked.length) { alert('이동할 항목을 먼저 체크해주세요.'); return; }
-  const sel = document.getElementById('moveTargetSelect');
-  const targetId = +sel.value;
-  const targetSec = sections.find(s => s.id === targetId);
-  if (!targetSec) return;
-
-  checked.forEach(({secId, rowId}) => {
-    if (secId === targetId) return; // 이미 같은 섹션이면 패스
-    const fromSec = sections.find(s => s.id === secId);
-    if (!fromSec) return;
-    const idx = fromSec.rows.findIndex(r => r.id === rowId);
-    if (idx === -1) return;
-    const [row] = fromSec.rows.splice(idx, 1);
-    targetSec.rows.push(row);
-  });
-
-  renderSections();
-  triggerAutoSave();
 }
 
 function deleteCheckedRows() {
@@ -2004,15 +2015,7 @@ function deleteCheckedRows() {
 }
 
 function moveRow(secId, rowId, dir) {
-  const sec = sections.find(s => s.id === secId);
-  if (!sec) return;
-  const idx = sec.rows.findIndex(r => r.id === rowId);
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= sec.rows.length) return;
-  // 스왑
-  const tmp = sec.rows[idx];
-  sec.rows[idx] = sec.rows[newIdx];
-  sec.rows[newIdx] = tmp;
+  stepMoveRow(secId, rowId, dir);
   renderSections();
   triggerAutoSave();
 }
