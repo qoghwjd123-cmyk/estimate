@@ -909,6 +909,8 @@
       <div class="toolbar-group" style="margin-left:auto;">
         <button class="toolbar-action-btn" onclick="moveCheckedRows(-1)">▲ 위로</button>
         <button class="toolbar-action-btn" onclick="moveCheckedRows(1)">▼ 아래로</button>
+        <select id="moveTargetSelect" class="toolbar-action-btn" style="padding:4px 6px;"></select>
+        <button class="toolbar-action-btn" onclick="moveCheckedRowsToSection()">➡ 섹션 이동</button>
         <button class="toolbar-action-btn danger" onclick="deleteCheckedRows()">🗑 삭제</button>
       </div>
     </div>
@@ -916,6 +918,9 @@
     <button class="add-section-btn" onclick="addSection()">
       <span style="font-size:18px">＋</span> 새 섹션 추가 (예: A동 공사, 철거공사 등)
     </button>
+    <div class="toolbar-group" style="margin-top:10px;">
+      <button class="toolbar-action-btn" onclick="moveSectionsToNewEstimate()">📄 체크한 섹션 → 새 견적서로 이동</button>
+    </div>
 
   </div>
 
@@ -1660,7 +1665,16 @@ function renderSections() {
     el.innerHTML = buildSectionHTML(sec);
     container.appendChild(el);
   });
+  populateMoveTargetSelect();
   setTimeout(calcGrandTotal, 0);
+}
+
+function populateMoveTargetSelect() {
+  const sel = document.getElementById('moveTargetSelect');
+  if (!sel) return;
+  const prevVal = sel.value;
+  sel.innerHTML = sections.map((s, i) => `<option value="${s.id}">${i+1}. ${s.name || '(이름없음)'}</option>`).join('');
+  if (prevVal && sections.some(s => String(s.id) === prevVal)) sel.value = prevVal;
 }
 
 function addRowButtons() {
@@ -1682,6 +1696,7 @@ function buildSectionHTML(sec) {
 
   return `
   <div class="section-header">
+    <input type="checkbox" class="section-check no-print" data-sec="${sec.id}" style="margin-right:6px">
     <span style="color:#2d2d2d;font-size:13px;font-weight:700;min-width:24px">${sections.indexOf(sec)+1}</span>
     <input type="text" value="${esc(sec.name)}" placeholder="섹션 이름 (예: 철거공사, A동 공사...)"
       onchange="updateSectionName(${sec.id}, this.value)">
@@ -1952,6 +1967,28 @@ function moveCheckedRows(dir) {
       if (cb) cb.checked = true;
     });
   }, 50);
+}
+
+function moveCheckedRowsToSection() {
+  const checked = getCheckedRows();
+  if (!checked.length) { alert('이동할 항목을 먼저 체크해주세요.'); return; }
+  const sel = document.getElementById('moveTargetSelect');
+  const targetId = +sel.value;
+  const targetSec = sections.find(s => s.id === targetId);
+  if (!targetSec) return;
+
+  checked.forEach(({secId, rowId}) => {
+    if (secId === targetId) return; // 이미 같은 섹션이면 패스
+    const fromSec = sections.find(s => s.id === secId);
+    if (!fromSec) return;
+    const idx = fromSec.rows.findIndex(r => r.id === rowId);
+    if (idx === -1) return;
+    const [row] = fromSec.rows.splice(idx, 1);
+    targetSec.rows.push(row);
+  });
+
+  renderSections();
+  triggerAutoSave();
 }
 
 function deleteCheckedRows() {
@@ -2262,6 +2299,57 @@ function saveEstimate(silent=false) {
     const btn = document.querySelector('[onclick="saveEstimate()"]');
     if (btn) { btn.textContent = '✅ 저장'; setTimeout(()=>btn.textContent='💾 저장', 1500); }
   }
+}
+
+function moveSectionsToNewEstimate() {
+  const checkedIds = [...document.querySelectorAll('.section-check:checked')].map(cb => +cb.dataset.sec);
+  if (!checkedIds.length) { alert('이동할 섹션을 먼저 체크해주세요.'); return; }
+  if (checkedIds.length >= sections.length) { alert('모든 섹션을 다 옮길 수는 없어요. 최소 1개 섹션은 현재 견적서에 남겨두세요.'); return; }
+
+  const newTitle = prompt('새로 만들 견적서의 이름을 입력하세요.', document.getElementById('ci-project')?.textContent?.trim() || '제목없음');
+  if (newTitle === null) return; // 취소
+
+  // 먼저 현재 견적서를 저장해서 최신 상태 보존
+  saveEstimate(true);
+
+  const movedSections = sections.filter(s => checkedIds.includes(s.id));
+  sections = sections.filter(s => !checkedIds.includes(s.id));
+
+  // 새 견적서 데이터 구성 (표지는 현재 견적서 것을 복사)
+  const newData = {
+    id: Date.now(),
+    title: newTitle,
+    savedAt: new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    cover: {
+      project: newTitle,
+      client:  document.getElementById('ci-client')?.textContent||'',
+      company: document.getElementById('ci-company')?.textContent||'',
+      biznum:  document.getElementById('ci-biznum')?.textContent||'',
+      address: document.getElementById('ci-address')?.textContent||'',
+      email:   document.getElementById('ci-email')?.textContent||'',
+      tel:     document.getElementById('ci-tel')?.textContent||'',
+      fax:     document.getElementById('ci-fax')?.textContent||'',
+      biztype: document.getElementById('ci-biztype')?.textContent||'',
+      bizitem: document.getElementById('ci-bizitem')?.textContent||'',
+      date:    document.getElementById('ci-date')?.value||'',
+      note1: '', note2: '', note3: '',
+    },
+    sections: JSON.parse(JSON.stringify(movedSections)),
+    notes: [],
+    sectionCounter, rowCounter,
+  };
+
+  const list = getEstimates();
+  list.unshift(newData);
+  saveEstimates(list);
+  if (window.saveToFirestore) window.saveToFirestore(newData);
+
+  // 현재 견적서에서 이동된 섹션 제거 후 재저장
+  if (!sections.length) addSection('');
+  renderSections();
+  saveEstimate(true);
+
+  alert(`"${newTitle}" 견적서로 ${movedSections.length}개 섹션을 이동했습니다.\n저장된 견적서 목록에서 확인할 수 있어요.`);
 }
 
 function loadEstimate(id) {
