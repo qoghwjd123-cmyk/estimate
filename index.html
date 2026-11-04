@@ -167,7 +167,7 @@
     border-radius: 6px 6px 0 0;
     margin-top: 16px;
   }
-  .section-header input {
+  .section-header input[type="text"] {
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(45,45,45,0.25);
@@ -178,8 +178,9 @@
     width: 500px;
     padding: 2px 4px;
   }
-  .section-header input:focus { outline: none; border-bottom-color: var(--accent); }
-  .section-header input::placeholder { color: rgba(45,45,45,0.4); }
+  .section-header input[type="text"]:focus { outline: none; border-bottom-color: var(--accent); }
+  .section-header input[type="text"]::placeholder { color: rgba(45,45,45,0.4); }
+  .section-header input[type="checkbox"] { width: 16px; height: 16px; flex: none; cursor: pointer; accent-color: var(--accent); }
 
   .table-wrap { overflow-x: auto; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 4px; }
 
@@ -521,7 +522,7 @@
 
     /* 섹션 헤더 */
     .section-header { border-radius: 0 !important; }
-    .section-header input { color: #2d2d2d !important; background: transparent !important; border: none !important; }
+    .section-header input[type="text"] { color: #2d2d2d !important; background: transparent !important; border: none !important; }
 
     /* 소계/합계 배경색 유지 */
     tr.subtotal td, tr.total-row td { -webkit-print-color-adjust: exact; }
