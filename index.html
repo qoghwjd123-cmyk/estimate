@@ -1786,15 +1786,15 @@ function buildRowHTML(secId, r, idx) {
   const totUnit = (r.mat||0) + (r.lab||0) + (r.exp||0);
 
   return `<tr data-sec="${secId}" data-row="${r.id}">
-    <td><input type="text" value="${esc(r.품명)}" placeholder="품명" oninput="updateRow(${secId},${r.id},'품명',this.value)"></td>
+    <td><input type="text" value="${esc(r.품명)}" placeholder="" oninput="updateRow(${secId},${r.id},'품명',this.value)"></td>
     <td class="unit-cell">
-      <input class="unit-input" type="text" value="${esc(r.규격)}" placeholder="규격"
+      <input class="unit-input" type="text" value="${esc(r.규격)}" placeholder=""
         data-spec-sec="${secId}" data-spec-row="${r.id}"
         onfocus="focusSpecInput(this)"
         oninput="updateRow(${secId},${r.id},'규격',this.value)">
     </td>
     <td class="unit-cell">
-      <input class="unit-input" type="text" value="${esc(r.단위)}" placeholder="단위"
+      <input class="unit-input" type="text" value="${esc(r.단위)}" placeholder=""
         data-sec="${secId}" data-row="${r.id}"
         onfocus="focusUnitInput(this)"
         oninput="updateRow(${secId},${r.id},'단위',this.value)">
